@@ -7,6 +7,7 @@
 - 单个 HTTP 接口切换 `openai` / `gemini`
 - 支持 `system_prompt`、多轮 `messages`、`temperature`、`max_output_tokens`
 - 自带网页聊天页、会话列表和上下文保留
+- 自带 `docker-compose.yml` 和服务器更新脚本
 - 自带 Docker 配置，适合部署到 Render、Railway、Fly.io 或任意容器平台
 
 ## 本地启动
@@ -56,7 +57,32 @@ Gemini 只需要把 `provider` 改成 `gemini`。
 
 当前版本会把网页会话保存到本地文件，默认路径是 `data/sessions.json`。
 
-如果你在 VPS 上希望容器重建后依然保留会话，建议挂载宿主机目录：
+如果你在 VPS 上希望容器重建后依然保留会话，推荐直接使用根目录的 `docker-compose.yml`，它已经把 `./data` 挂载到容器内的 `/app/data`。
+
+## VPS 更新
+
+推荐在 VPS 上把仓库放到固定目录，例如 `/opt/cloud-agent`，然后：
+
+```bash
+cd /opt/cloud-agent
+cp .env.example .env
+```
+
+把 `.env` 里的真实 key 填好后，首次启动：
+
+```bash
+chmod +x scripts/deploy.sh scripts/update.sh
+./scripts/deploy.sh
+```
+
+后续只要 GitHub 有新代码，VPS 上更新：
+
+```bash
+cd /opt/cloud-agent
+./scripts/update.sh
+```
+
+如果你只想手动使用 Docker 命令，也可以继续用：
 
 ```bash
 docker run -d \

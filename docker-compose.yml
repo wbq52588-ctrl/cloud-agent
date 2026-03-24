@@ -1,0 +1,11 @@
+services:
+  cloud-agent:
+    build: .
+    container_name: cloud-agent
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "18000:10000"
+    volumes:
+      - ./data:/app/data

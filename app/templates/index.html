@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud Agent Console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">Cloud Agent</p>
+          <h1>Model Console</h1>
+          <button id="new-chat-button" class="primary-button">新建会话</button>
+        </div>
+        <div class="sidebar-section">
+          <p class="section-title">会话</p>
+          <div id="session-list" class="session-list"></div>
+        </div>
+      </aside>
+
+      <main class="chat-panel">
+        <header class="chat-header">
+          <div>
+            <p class="eyebrow">Multi Model Agent</p>
+            <h2 id="chat-title">请选择或新建一个会话</h2>
+          </div>
+          <div class="controls">
+            <label>
+              模型提供方
+              <select id="provider">
+                <option value="gemini">Gemini</option>
+                <option value="openai">OpenAI</option>
+              </select>
+            </label>
+            <label>
+              模型
+              <input id="model" type="text" placeholder="留空用默认模型" />
+            </label>
+          </div>
+        </header>
+
+        <section id="message-list" class="message-list">
+          <div class="empty-state">
+            <h3>先创建一个会话</h3>
+            <p>这个版本已经支持多模型切换、上下文保留和网页聊天。</p>
+          </div>
+        </section>
+
+        <form id="chat-form" class="composer">
+          <label class="system-prompt">
+            系统提示词
+            <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>
+          </label>
+          <label class="message-box">
+            发送消息
+            <textarea id="user-message" rows="4" placeholder="输入你的问题..." required></textarea>
+          </label>
+          <div class="composer-actions">
+            <span id="status-text" class="status-text">服务就绪</span>
+            <button id="send-button" type="submit" class="primary-button">发送</button>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

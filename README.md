@@ -1,11 +1,12 @@
 # Multi Model Agent
 
-一个可直接部署到云服务的轻量 API，统一调用 OpenAI 和 Gemini 模型。
+一个可直接部署到云服务的轻量多模型 Agent，统一调用 OpenAI 和 Gemini 模型，并自带网页聊天界面。
 
 ## 功能
 
 - 单个 HTTP 接口切换 `openai` / `gemini`
 - 支持 `system_prompt`、多轮 `messages`、`temperature`、`max_output_tokens`
+- 自带网页聊天页、会话列表和上下文保留
 - 自带 Docker 配置，适合部署到 Render、Railway、Fly.io 或任意容器平台
 
 ## 本地启动
@@ -20,8 +21,12 @@ uvicorn app.main:app --reload
 
 服务启动后访问：
 
+- `GET /`
 - `GET /health`
 - `POST /v1/agent/run`
+- `GET /v1/sessions`
+- `POST /v1/sessions`
+- `POST /v1/sessions/{session_id}/chat`
 
 ## 请求示例
 

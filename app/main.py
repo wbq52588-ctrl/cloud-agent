@@ -46,6 +46,8 @@ def format_provider_error(exc: Exception) -> str:
 
     if "insufficient_quota" in lowered:
         return "OpenAI API 额度不足，请检查 billing 或充值后重试"
+    if "resource_exhausted" in lowered:
+        return "Gemini 当前模型额度不足，请稍后重试或切换到其他 Gemini 模型"
     if "api key was reported as leaked" in lowered:
         return "Gemini API Key 已被判定泄露，请更换新的 Key"
     if "permission_denied" in lowered:

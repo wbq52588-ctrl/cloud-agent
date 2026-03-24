@@ -4,6 +4,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.attachment_utils import build_user_message_text
 from app.config import get_settings
 from app.providers.gemini_provider import run_gemini_agent
 from app.providers.openai_provider import run_openai_agent
@@ -139,9 +140,10 @@ async def chat_session(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    composed_user_message = build_user_message_text(request.user_message, request.attachments)
     messages = [
         *session.messages,
-        ChatMessage(role="user", content=request.user_message),
+        ChatMessage(role="user", content=composed_user_message or request.user_message or "[Uploaded content]"),
     ]
     settings = get_settings()
 
@@ -153,6 +155,7 @@ async def chat_session(
                     model=request.model,
                     system_prompt=request.system_prompt,
                     messages=messages,
+                    attachments=request.attachments,
                     temperature=request.temperature,
                     max_output_tokens=request.max_output_tokens,
                 ),
@@ -165,6 +168,7 @@ async def chat_session(
                     model=request.model,
                     system_prompt=request.system_prompt,
                     messages=messages,
+                    attachments=request.attachments,
                     temperature=request.temperature,
                     max_output_tokens=request.max_output_tokens,
                 ),
@@ -177,7 +181,7 @@ async def chat_session(
 
     updated_session = store.append_turn(
         session_id=session_id,
-        user_message=request.user_message,
+        user_message=composed_user_message or request.user_message or "[Uploaded content]",
         assistant_message=output_text,
         provider=request.provider,
         model=model,

@@ -3,6 +3,7 @@ const state = {
   activeSessionId: null,
   accessPassword: "",
   requiresPassword: false,
+  attachments: [],
 };
 
 const modelOptions = {
@@ -40,6 +41,8 @@ const elements = {
   authSubmit: document.getElementById("auth-submit"),
   authStatus: document.getElementById("auth-status"),
   logoutButton: document.getElementById("logout-button"),
+  fileInput: document.getElementById("file-input"),
+  attachmentList: document.getElementById("attachment-list"),
 };
 
 function escapeHtml(text) {
@@ -55,6 +58,31 @@ function formatContent(text) {
 
 function setStatus(text) {
   elements.statusText.textContent = text;
+}
+
+function renderAttachments() {
+  if (!state.attachments.length) {
+    elements.attachmentList.innerHTML = "";
+    return;
+  }
+
+  elements.attachmentList.innerHTML = state.attachments
+    .map(
+      (attachment, index) => `
+        <div class="attachment-chip">
+          <span>${escapeHtml(attachment.name)}</span>
+          <button type="button" class="ghost-button" data-remove-attachment="${index}">移除</button>
+        </div>
+      `,
+    )
+    .join("");
+
+  document.querySelectorAll("[data-remove-attachment]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.attachments.splice(Number(button.dataset.removeAttachment), 1);
+      renderAttachments();
+    });
+  });
 }
 
 function clearInvalidSessionState() {
@@ -286,10 +314,14 @@ async function submitTurn(event) {
         model: elements.model.value || null,
         system_prompt: elements.systemPrompt.value || null,
         user_message: userMessage,
+        attachments: state.attachments,
       }),
     });
 
     elements.userMessage.value = "";
+    state.attachments = [];
+    elements.fileInput.value = "";
+    renderAttachments();
     elements.chatTitle.textContent = session.title;
     renderMessages(session.messages);
     await refreshSessions();
@@ -355,6 +387,59 @@ elements.quickChips.forEach((chip) => {
     elements.userMessage.value = chip.dataset.prompt || "";
     elements.userMessage.focus();
   });
+});
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+elements.fileInput.addEventListener("change", async (event) => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) {
+    return;
+  }
+
+  setStatus("正在读取附件...");
+
+  try {
+    for (const file of files) {
+      if (file.type.startsWith("image/")) {
+        const dataUrl = await readFileAsDataUrl(file);
+        state.attachments.push({
+          kind: "image",
+          name: file.name,
+          content_type: file.type || "image/png",
+          data_url: dataUrl,
+        });
+      } else {
+        const text = await readFileAsText(file);
+        state.attachments.push({
+          kind: "text",
+          name: file.name,
+          content_type: file.type || "text/plain",
+          text_content: text,
+        });
+      }
+    }
+    renderAttachments();
+    setStatus("附件已就绪");
+  } catch (error) {
+    setStatus(`附件读取失败: ${error.message}`);
+  }
 });
 
 async function bootstrap() {

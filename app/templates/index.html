@@ -71,6 +71,16 @@
             <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
             <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">整理需求</button>
           </div>
+          <label class="upload-box">
+            上传图片或文本文件
+            <input
+              id="file-input"
+              type="file"
+              multiple
+              accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
+            />
+          </label>
+          <div id="attachment-list" class="attachment-list"></div>
           <label class="system-prompt">
             系统提示词
             <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>

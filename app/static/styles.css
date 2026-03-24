@@ -46,6 +46,10 @@ body {
   z-index: 20;
 }
 
+.auth-overlay.hidden {
+  display: none;
+}
+
 .auth-card {
   width: min(92vw, 440px);
   padding: 24px;

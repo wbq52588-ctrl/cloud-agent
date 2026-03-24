@@ -3,6 +3,18 @@ const state = {
   activeSessionId: null,
 };
 
+const modelOptions = {
+  gemini: [
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+  ],
+  openai: [
+    { value: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
+    { value: "gpt-4.1", label: "GPT-4.1" },
+    { value: "gpt-5.4", label: "GPT-5.4" },
+  ],
+};
+
 const modelDefaults = {
   gemini: "gemini-2.5-flash",
   openai: "gpt-4.1-mini",
@@ -38,6 +50,23 @@ function setStatus(text) {
   elements.statusText.textContent = text;
 }
 
+function syncModelOptions(preferredModel) {
+  const provider = elements.provider.value;
+  const options = modelOptions[provider] || [];
+  const fallbackModel = preferredModel || modelDefaults[provider] || "";
+
+  elements.model.innerHTML = options
+    .map(
+      (option) => `
+        <option value="${option.value}">${option.label}</option>
+      `,
+    )
+    .join("");
+
+  const hasPreferredModel = options.some((option) => option.value === fallbackModel);
+  elements.model.value = hasPreferredModel ? fallbackModel : modelDefaults[provider];
+}
+
 function persistPreferences() {
   localStorage.setItem(
     "cloud-agent-preferences",
@@ -59,7 +88,7 @@ function loadPreferences() {
   try {
     const data = JSON.parse(raw);
     elements.provider.value = data.provider || "gemini";
-    elements.model.value = data.model || "";
+    syncModelOptions(data.model || "");
     elements.systemPrompt.value = data.systemPrompt || "";
     state.activeSessionId = data.activeSessionId || null;
   } catch {
@@ -162,7 +191,7 @@ async function loadSession(sessionId) {
   state.activeSessionId = sessionId;
   elements.chatTitle.textContent = session.title;
   elements.provider.value = session.provider || "gemini";
-  elements.model.value = session.model || modelDefaults[elements.provider.value];
+  syncModelOptions(session.model || "");
   elements.systemPrompt.value = session.system_prompt || "";
   renderSessions();
   renderMessages(session.messages);
@@ -212,9 +241,7 @@ async function submitTurn(event) {
 elements.chatForm.addEventListener("submit", submitTurn);
 elements.newChatButton.addEventListener("click", createSession);
 elements.provider.addEventListener("change", () => {
-  if (!elements.model.value || Object.values(modelDefaults).includes(elements.model.value)) {
-    elements.model.value = modelDefaults[elements.provider.value];
-  }
+  syncModelOptions();
   persistPreferences();
 });
 elements.model.addEventListener("change", persistPreferences);
@@ -235,9 +262,7 @@ elements.quickChips.forEach((chip) => {
 
 async function bootstrap() {
   loadPreferences();
-  if (!elements.model.value) {
-    elements.model.value = modelDefaults[elements.provider.value];
-  }
+  syncModelOptions(elements.model.value);
 
   setStatus("正在加载...");
   await refreshSessions();

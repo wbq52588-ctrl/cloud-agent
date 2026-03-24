@@ -286,10 +286,17 @@ async function verifyAccess() {
   setAuthStatus("正在验证...");
 
   try {
-    await fetchJson("/v1/sessions");
+    await refreshSessions();
     persistPreferences();
-    hideAuthOverlay();
+    if (state.activeSessionId && state.sessions.some((session) => session.session_id === state.activeSessionId)) {
+      await loadSession(state.activeSessionId);
+    } else if (state.sessions.length > 0) {
+      await loadSession(state.sessions[0].session_id);
+    } else {
+      renderMessages([]);
+    }
     setAuthStatus("验证成功");
+    hideAuthOverlay();
     setStatus("服务就绪");
   } catch (error) {
     setAuthStatus(`验证失败: ${error.message}`);

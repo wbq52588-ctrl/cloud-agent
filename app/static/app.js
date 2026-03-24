@@ -57,6 +57,14 @@ function setStatus(text) {
   elements.statusText.textContent = text;
 }
 
+function clearInvalidSessionState() {
+  state.activeSessionId = null;
+  elements.chatTitle.textContent = "请选择或新建一个会话";
+  renderSessions();
+  renderMessages([]);
+  persistPreferences();
+}
+
 function syncModelOptions(preferredModel) {
   const provider = elements.provider.value;
   const options = modelOptions[provider] || [];
@@ -230,7 +238,19 @@ async function createSession() {
 }
 
 async function loadSession(sessionId) {
-  const session = await fetchJson(`/v1/sessions/${sessionId}`);
+  let session;
+
+  try {
+    session = await fetchJson(`/v1/sessions/${sessionId}`);
+  } catch (error) {
+    if (error.message.includes("Session not found")) {
+      clearInvalidSessionState();
+      setStatus("原会话不存在，请重新创建一个新会话");
+      return;
+    }
+    throw error;
+  }
+
   state.activeSessionId = sessionId;
   elements.chatTitle.textContent = session.title;
   elements.provider.value = session.provider || "gemini";
@@ -275,6 +295,11 @@ async function submitTurn(event) {
     await refreshSessions();
     setStatus("已完成");
   } catch (error) {
+    if (error.message.includes("Session not found")) {
+      clearInvalidSessionState();
+      setStatus("当前会话已失效，请重新创建一个新会话");
+      return;
+    }
     setStatus(`失败: ${error.message}`);
   } finally {
     elements.sendButton.disabled = false;
@@ -362,6 +387,8 @@ async function bootstrap() {
     await loadSession(state.activeSessionId);
   } else if (state.sessions.length > 0) {
     await loadSession(state.sessions[0].session_id);
+  } else {
+    clearInvalidSessionState();
   }
 
   setStatus("服务就绪");

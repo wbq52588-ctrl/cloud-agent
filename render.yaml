@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: multi-model-agent
+    runtime: docker
+    plan: free
+    autoDeploy: true

@@ -1,6 +1,8 @@
 const state = {
   sessions: [],
   activeSessionId: null,
+  accessPassword: "",
+  requiresPassword: false,
 };
 
 const modelOptions = {
@@ -33,6 +35,11 @@ const elements = {
   chatForm: document.getElementById("chat-form"),
   newChatButton: document.getElementById("new-chat-button"),
   quickChips: document.querySelectorAll(".quick-chip"),
+  authOverlay: document.getElementById("auth-overlay"),
+  accessPassword: document.getElementById("access-password"),
+  authSubmit: document.getElementById("auth-submit"),
+  authStatus: document.getElementById("auth-status"),
+  logoutButton: document.getElementById("logout-button"),
 };
 
 function escapeHtml(text) {
@@ -77,6 +84,10 @@ function persistPreferences() {
       activeSessionId: state.activeSessionId,
     }),
   );
+
+  if (state.accessPassword) {
+    localStorage.setItem("cloud-agent-access-password", state.accessPassword);
+  }
 }
 
 function loadPreferences() {
@@ -94,6 +105,25 @@ function loadPreferences() {
   } catch {
     localStorage.removeItem("cloud-agent-preferences");
   }
+
+  state.accessPassword = localStorage.getItem("cloud-agent-access-password") || "";
+}
+
+function setAuthStatus(text) {
+  elements.authStatus.textContent = text;
+}
+
+function authHeaders() {
+  return state.accessPassword ? { "x-access-password": state.accessPassword } : {};
+}
+
+function showAuthOverlay() {
+  elements.authOverlay.classList.remove("hidden");
+  elements.accessPassword.value = state.accessPassword;
+}
+
+function hideAuthOverlay() {
+  elements.authOverlay.classList.add("hidden");
 }
 
 function renderSessions() {
@@ -155,7 +185,11 @@ function renderMessages(messages) {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
+  const headers = {
+    ...(options.headers || {}),
+    ...authHeaders(),
+  };
+  const response = await fetch(url, { ...options, headers });
   if (!response.ok) {
     let detail = "Request failed";
     try {
@@ -163,6 +197,10 @@ async function fetchJson(url, options = {}) {
       detail = data.detail || detail;
     } catch {
       detail = response.statusText || detail;
+    }
+
+    if (response.status === 401) {
+      showAuthOverlay();
     }
     throw new Error(detail);
   }
@@ -172,6 +210,11 @@ async function fetchJson(url, options = {}) {
 async function refreshSessions() {
   state.sessions = await fetchJson("/v1/sessions");
   renderSessions();
+}
+
+async function loadPublicConfig() {
+  const config = await fetchJson("/v1/public-config");
+  state.requiresPassword = config.requires_password;
 }
 
 async function createSession() {
@@ -238,8 +281,30 @@ async function submitTurn(event) {
   }
 }
 
+async function verifyAccess() {
+  state.accessPassword = elements.accessPassword.value.trim();
+  setAuthStatus("正在验证...");
+
+  try {
+    await fetchJson("/v1/sessions");
+    persistPreferences();
+    hideAuthOverlay();
+    setAuthStatus("验证成功");
+    setStatus("服务就绪");
+  } catch (error) {
+    setAuthStatus(`验证失败: ${error.message}`);
+  }
+}
+
 elements.chatForm.addEventListener("submit", submitTurn);
 elements.newChatButton.addEventListener("click", createSession);
+elements.authSubmit.addEventListener("click", verifyAccess);
+elements.logoutButton.addEventListener("click", () => {
+  state.accessPassword = "";
+  localStorage.removeItem("cloud-agent-access-password");
+  showAuthOverlay();
+  setStatus("已退出，请重新输入访问口令");
+});
 elements.provider.addEventListener("change", () => {
   syncModelOptions();
   persistPreferences();
@@ -265,7 +330,26 @@ async function bootstrap() {
   syncModelOptions(elements.model.value);
 
   setStatus("正在加载...");
-  await refreshSessions();
+  await loadPublicConfig();
+
+  if (state.requiresPassword && state.accessPassword) {
+    showAuthOverlay();
+    try {
+      await refreshSessions();
+      hideAuthOverlay();
+    } catch {
+      showAuthOverlay();
+      setAuthStatus("请输入访问口令");
+      return;
+    }
+  } else if (state.requiresPassword) {
+    showAuthOverlay();
+    setAuthStatus("请输入访问口令");
+    return;
+  } else {
+    hideAuthOverlay();
+    await refreshSessions();
+  }
 
   if (state.activeSessionId && state.sessions.some((session) => session.session_id === state.activeSessionId)) {
     await loadSession(state.activeSessionId);

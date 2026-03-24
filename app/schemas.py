@@ -52,3 +52,7 @@ class ChatTurnRequest(BaseModel):
     user_message: str = Field(min_length=1)
     temperature: float | None = Field(default=0.2, ge=0, le=2)
     max_output_tokens: int | None = Field(default=800, ge=1, le=8192)
+
+
+class PublicConfigResponse(BaseModel):
+    requires_password: bool

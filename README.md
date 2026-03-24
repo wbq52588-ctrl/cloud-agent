@@ -49,6 +49,7 @@ Gemini 只需要把 `provider` 改成 `gemini`。
 
 - `OPENAI_API_KEY`: OpenAI API Key
 - `GEMINI_API_KEY`: Gemini API Key
+- `APP_ACCESS_PASSWORD`: 网页和 API 的基础访问口令
 - `DEFAULT_OPENAI_MODEL`: 默认 `gpt-4.1-mini`
 - `DEFAULT_GEMINI_MODEL`: 默认 `gemini-2.5-flash`
 - `SESSION_STORE_PATH`: 会话存储文件，默认 `data/sessions.json`

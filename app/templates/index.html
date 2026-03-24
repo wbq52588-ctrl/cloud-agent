@@ -7,6 +7,22 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
+    <div id="auth-overlay" class="auth-overlay hidden">
+      <div class="auth-card">
+        <p class="eyebrow">Protected Access</p>
+        <h2>输入访问口令</h2>
+        <p class="header-note">这个站点已开启基础鉴权，输入口令后才能使用。</p>
+        <label>
+          访问口令
+          <input id="access-password" type="password" placeholder="请输入访问口令" />
+        </label>
+        <div class="composer-actions">
+          <span id="auth-status" class="status-text">等待验证</span>
+          <button id="auth-submit" class="primary-button" type="button">进入控制台</button>
+        </div>
+      </div>
+    </div>
+
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
@@ -65,7 +81,10 @@
           </label>
           <div class="composer-actions">
             <span id="status-text" class="status-text">服务就绪，按 Ctrl/Cmd + Enter 可发送</span>
-            <button id="send-button" type="submit" class="primary-button">发送</button>
+            <div class="action-row">
+              <button id="logout-button" type="button" class="ghost-button">退出登录</button>
+              <button id="send-button" type="submit" class="primary-button">发送</button>
+            </div>
           </div>
         </form>
       </main>

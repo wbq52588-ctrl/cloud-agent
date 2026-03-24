@@ -3,6 +3,11 @@ const state = {
   activeSessionId: null,
 };
 
+const modelDefaults = {
+  gemini: "gemini-2.5-flash",
+  openai: "gpt-4.1-mini",
+};
+
 const elements = {
   sessionList: document.getElementById("session-list"),
   messageList: document.getElementById("message-list"),
@@ -15,6 +20,7 @@ const elements = {
   sendButton: document.getElementById("send-button"),
   chatForm: document.getElementById("chat-form"),
   newChatButton: document.getElementById("new-chat-button"),
+  quickChips: document.querySelectorAll(".quick-chip"),
 };
 
 function escapeHtml(text) {
@@ -24,8 +30,41 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;");
 }
 
+function formatContent(text) {
+  return escapeHtml(text).replaceAll("\n", "<br>");
+}
+
 function setStatus(text) {
   elements.statusText.textContent = text;
+}
+
+function persistPreferences() {
+  localStorage.setItem(
+    "cloud-agent-preferences",
+    JSON.stringify({
+      provider: elements.provider.value,
+      model: elements.model.value,
+      systemPrompt: elements.systemPrompt.value,
+      activeSessionId: state.activeSessionId,
+    }),
+  );
+}
+
+function loadPreferences() {
+  const raw = localStorage.getItem("cloud-agent-preferences");
+  if (!raw) {
+    return;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    elements.provider.value = data.provider || "gemini";
+    elements.model.value = data.model || "";
+    elements.systemPrompt.value = data.systemPrompt || "";
+    state.activeSessionId = data.activeSessionId || null;
+  } catch {
+    localStorage.removeItem("cloud-agent-preferences");
+  }
 }
 
 function renderSessions() {
@@ -63,14 +102,25 @@ function renderMessages(messages) {
 
   elements.messageList.innerHTML = messages
     .map(
-      (message) => `
+      (message, index) => `
         <article class="message ${message.role}">
-          <span class="message-role">${message.role}</span>
-          <div>${escapeHtml(message.content)}</div>
+          <div class="message-toolbar">
+            <span class="message-role">${message.role}</span>
+            <button type="button" class="ghost-button" data-copy-index="${index}">复制</button>
+          </div>
+          <div>${formatContent(message.content)}</div>
         </article>
       `,
     )
     .join("");
+
+  document.querySelectorAll("[data-copy-index]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const index = Number(button.dataset.copyIndex);
+      await navigator.clipboard.writeText(messages[index].content);
+      setStatus("已复制消息内容");
+    });
+  });
 
   elements.messageList.scrollTop = elements.messageList.scrollHeight;
 }
@@ -102,6 +152,7 @@ async function createSession() {
     body: JSON.stringify({}),
   });
   state.activeSessionId = session.session_id;
+  persistPreferences();
   await refreshSessions();
   await loadSession(session.session_id);
 }
@@ -111,10 +162,11 @@ async function loadSession(sessionId) {
   state.activeSessionId = sessionId;
   elements.chatTitle.textContent = session.title;
   elements.provider.value = session.provider || "gemini";
-  elements.model.value = session.model || "";
+  elements.model.value = session.model || modelDefaults[elements.provider.value];
   elements.systemPrompt.value = session.system_prompt || "";
   renderSessions();
   renderMessages(session.messages);
+  persistPreferences();
 }
 
 async function submitTurn(event) {
@@ -130,6 +182,7 @@ async function submitTurn(event) {
   }
 
   elements.sendButton.disabled = true;
+  persistPreferences();
   setStatus("正在调用模型...");
 
   try {
@@ -158,13 +211,43 @@ async function submitTurn(event) {
 
 elements.chatForm.addEventListener("submit", submitTurn);
 elements.newChatButton.addEventListener("click", createSession);
+elements.provider.addEventListener("change", () => {
+  if (!elements.model.value || Object.values(modelDefaults).includes(elements.model.value)) {
+    elements.model.value = modelDefaults[elements.provider.value];
+  }
+  persistPreferences();
+});
+elements.model.addEventListener("change", persistPreferences);
+elements.systemPrompt.addEventListener("change", persistPreferences);
+elements.userMessage.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    event.preventDefault();
+    elements.chatForm.requestSubmit();
+  }
+});
+
+elements.quickChips.forEach((chip) => {
+  chip.addEventListener("click", () => {
+    elements.userMessage.value = chip.dataset.prompt || "";
+    elements.userMessage.focus();
+  });
+});
 
 async function bootstrap() {
+  loadPreferences();
+  if (!elements.model.value) {
+    elements.model.value = modelDefaults[elements.provider.value];
+  }
+
   setStatus("正在加载...");
   await refreshSessions();
-  if (state.sessions.length > 0) {
+
+  if (state.activeSessionId && state.sessions.some((session) => session.session_id === state.activeSessionId)) {
+    await loadSession(state.activeSessionId);
+  } else if (state.sessions.length > 0) {
     await loadSession(state.sessions[0].session_id);
   }
+
   setStatus("服务就绪");
 }
 

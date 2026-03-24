@@ -50,6 +50,23 @@ Gemini 只需要把 `provider` 改成 `gemini`。
 - `GEMINI_API_KEY`: Gemini API Key
 - `DEFAULT_OPENAI_MODEL`: 默认 `gpt-4.1-mini`
 - `DEFAULT_GEMINI_MODEL`: 默认 `gemini-2.5-flash`
+- `SESSION_STORE_PATH`: 会话存储文件，默认 `data/sessions.json`
+
+## 会话持久化
+
+当前版本会把网页会话保存到本地文件，默认路径是 `data/sessions.json`。
+
+如果你在 VPS 上希望容器重建后依然保留会话，建议挂载宿主机目录：
+
+```bash
+docker run -d \
+  --name cloud-agent \
+  --restart always \
+  --env-file .env \
+  -v /opt/cloud-agent/data:/app/data \
+  -p 18000:10000 \
+  cloud-agent
+```
 
 ## 云部署
 

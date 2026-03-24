@@ -80,6 +80,11 @@ p {
   margin-top: 0;
 }
 
+.header-note {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
 .primary-button {
   border: none;
   border-radius: 14px;
@@ -216,9 +221,42 @@ textarea {
   letter-spacing: 0.08em;
 }
 
+.message-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ghost-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
 .composer {
   display: grid;
   gap: 14px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quick-chip {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
 }
 
 .composer-actions {
@@ -244,5 +282,11 @@ textarea {
 
   .controls {
     grid-template-columns: 1fr;
+  }
+
+  .quick-actions,
+  .composer-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

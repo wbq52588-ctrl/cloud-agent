@@ -26,7 +26,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Multi Model Agent", lifespan=lifespan)
-store = SessionStore()
+store = SessionStore(get_settings().session_store_path)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 

@@ -25,6 +25,7 @@
           <div>
             <p class="eyebrow">Multi Model Agent</p>
             <h2 id="chat-title">请选择或新建一个会话</h2>
+            <p class="header-note">支持 Gemini / OpenAI 切换，消息历史会自动保留。</p>
           </div>
           <div class="controls">
             <label>
@@ -49,6 +50,11 @@
         </section>
 
         <form id="chat-form" class="composer">
+          <div class="quick-actions">
+            <button type="button" class="quick-chip" data-prompt="帮我写一份 VPS 部署检查清单">VPS 检查清单</button>
+            <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
+            <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">整理需求</button>
+          </div>
           <label class="system-prompt">
             系统提示词
             <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>
@@ -58,7 +64,7 @@
             <textarea id="user-message" rows="4" placeholder="输入你的问题..." required></textarea>
           </label>
           <div class="composer-actions">
-            <span id="status-text" class="status-text">服务就绪</span>
+            <span id="status-text" class="status-text">服务就绪，按 Ctrl/Cmd + Enter 可发送</span>
             <button id="send-button" type="submit" class="primary-button">发送</button>
           </div>
         </form>

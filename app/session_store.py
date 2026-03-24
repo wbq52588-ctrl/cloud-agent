@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import json
+from pathlib import Path
 from threading import Lock
 from uuid import uuid4
 
@@ -12,9 +14,29 @@ def _now_iso() -> str:
 
 
 class SessionStore:
-    def __init__(self) -> None:
+    def __init__(self, store_path: str) -> None:
         self._lock = Lock()
+        self._store_path = Path(store_path)
         self._sessions: dict[str, SessionDetail] = {}
+        self._store_path.parent.mkdir(parents=True, exist_ok=True)
+        self._load()
+
+    def _load(self) -> None:
+        if not self._store_path.exists():
+            return
+
+        payload = json.loads(self._store_path.read_text(encoding="utf-8"))
+        self._sessions = {
+            item["session_id"]: SessionDetail.model_validate(item)
+            for item in payload
+        }
+
+    def _save(self) -> None:
+        payload = [session.model_dump() for session in self._sessions.values()]
+        self._store_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
     def create_session(self, title: str | None = None) -> SessionDetail:
         with self._lock:
@@ -30,6 +52,7 @@ class SessionStore:
                 messages=[],
             )
             self._sessions[session_id] = session
+            self._save()
             return session
 
     def list_sessions(self) -> list[SessionSummary]:
@@ -82,4 +105,5 @@ class SessionStore:
             session.messages.append(ChatMessage(role="assistant", content=assistant_message))
             session.message_count = len(session.messages)
             session.updated_at = _now_iso()
+            self._save()
             return SessionDetail.model_validate(session.model_dump())

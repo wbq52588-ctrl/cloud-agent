@@ -57,8 +57,31 @@ function escapeHtml(text) {
     .replaceAll(">", "&gt;");
 }
 
-function formatContent(text) {
+function escapeCodePreservingNewlines(text) {
   return escapeHtml(text).replaceAll("\n", "<br>");
+}
+
+function formatContent(text) {
+  const escaped = escapeHtml(text);
+  const blocks = escaped.split("```");
+
+  return blocks
+    .map((block, index) => {
+      if (index % 2 === 1) {
+        return `<pre><code>${block}</code></pre>`;
+      }
+
+      return block
+        .split(/\n{2,}/)
+        .map((paragraph) => {
+          const withInlineCode = paragraph.replace(/`([^`]+)`/g, "<code>$1</code>");
+          return `<p>${escapeCodePreservingNewlines(withInlineCode)}</p>`
+            .replace(/&lt;code&gt;/g, "<code>")
+            .replace(/&lt;\/code&gt;/g, "</code>");
+        })
+        .join("");
+    })
+    .join("");
 }
 
 function setStatus(text) {
@@ -208,7 +231,7 @@ function renderMessages(messages) {
             <span class="message-role">${message.role}</span>
             <button type="button" class="ghost-button" data-copy-index="${index}">复制</button>
           </div>
-          <div>${formatContent(message.content)}</div>
+          <div class="message-content">${formatContent(message.content)}</div>
         </article>
       `,
     )
@@ -380,6 +403,10 @@ elements.provider.addEventListener("change", () => {
 });
 elements.model.addEventListener("change", persistPreferences);
 elements.systemPrompt.addEventListener("change", persistPreferences);
+elements.userMessage.addEventListener("input", () => {
+  elements.userMessage.style.height = "auto";
+  elements.userMessage.style.height = `${Math.min(elements.userMessage.scrollHeight, 260)}px`;
+});
 elements.userMessage.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
     event.preventDefault();

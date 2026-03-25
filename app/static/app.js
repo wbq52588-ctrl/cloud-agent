@@ -92,9 +92,22 @@ function setStatus(text) {
   elements.statusText.textContent = text;
 }
 
+function updateSidebarButtons() {
+  const collapsed = state.sidebarCollapsed && window.innerWidth > 960;
+
+  if (elements.sidebarToggle) {
+    elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
+  }
+
+  if (elements.sidebarToggleMobile) {
+    elements.sidebarToggleMobile.textContent = collapsed ? "展开会话栏" : "收起会话栏";
+  }
+}
+
 function applySidebarState() {
   elements.sidebar.classList.toggle("collapsed", state.sidebarCollapsed && window.innerWidth > 960);
   localStorage.setItem("cloud-agent-sidebar-collapsed", state.sidebarCollapsed ? "1" : "0");
+  updateSidebarButtons();
 }
 
 function renderAttachments() {
@@ -136,11 +149,7 @@ function syncModelOptions(preferredModel) {
   const fallbackModel = preferredModel || modelDefaults[provider] || "";
 
   elements.model.innerHTML = options
-    .map(
-      (option) => `
-        <option value="${option.value}">${option.label}</option>
-      `,
-    )
+    .map((option) => `<option value="${option.value}">${option.label}</option>`)
     .join("");
 
   const hasPreferredModel = options.some((option) => option.value === fallbackModel);
@@ -165,18 +174,16 @@ function persistPreferences() {
 
 function loadPreferences() {
   const raw = localStorage.getItem("cloud-agent-preferences");
-  if (!raw) {
-    return;
-  }
-
-  try {
-    const data = JSON.parse(raw);
-    elements.provider.value = data.provider || "gemini";
-    syncModelOptions(data.model || "");
-    elements.systemPrompt.value = data.systemPrompt || "";
-    state.activeSessionId = data.activeSessionId || null;
-  } catch {
-    localStorage.removeItem("cloud-agent-preferences");
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      elements.provider.value = data.provider || "gemini";
+      syncModelOptions(data.model || "");
+      elements.systemPrompt.value = data.systemPrompt || "";
+      state.activeSessionId = data.activeSessionId || null;
+    } catch {
+      localStorage.removeItem("cloud-agent-preferences");
+    }
   }
 
   state.accessPassword = localStorage.getItem("cloud-agent-access-password") || "";
@@ -227,7 +234,7 @@ function renderMessages(messages) {
     elements.messageList.innerHTML = `
       <div class="empty-state">
         <h3>开始第一轮对话</h3>
-        <p>你可以在这里切换 OpenAI 或 Gemini，然后直接发送消息。</p>
+        <p>你可以在这里切换 OpenAI、Gemini 或 GLM，然后直接发送消息。</p>
       </div>
     `;
     return;
@@ -341,7 +348,7 @@ async function submitTurn(event) {
 
   elements.sendButton.disabled = true;
   persistPreferences();
-  setStatus("正在调用模型，最多会自动重试一次...");
+  setStatus("正在调用模型，失败时会自动重试一次...");
 
   try {
     const session = await fetchJson(`/v1/sessions/${state.activeSessionId}/chat`, {
@@ -405,7 +412,7 @@ elements.logoutButton.addEventListener("click", () => {
   state.accessPassword = "";
   localStorage.removeItem("cloud-agent-access-password");
   showAuthOverlay();
-  setStatus("已退出，请重新输入访问口令");
+  setStatus("已退出登录，请重新输入访问口令");
 });
 elements.provider.addEventListener("change", () => {
   syncModelOptions();

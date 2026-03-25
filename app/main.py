@@ -56,13 +56,13 @@ def format_provider_error(exc: Exception) -> str:
     if "api key was reported as leaked" in lowered:
         return "Gemini API Key 已被判定泄露，请更换新的 Key"
     if "missing zhipu_api_key" in lowered:
-        return "服务器未配置 ZHIPU_API_KEY"
+        return "服务端未配置 ZHIPU_API_KEY"
     if "permission_denied" in lowered:
         return "模型服务拒绝了这次请求，请检查 API Key 权限"
     if "missing openai_api_key" in lowered:
-        return "服务器未配置 OPENAI_API_KEY"
+        return "服务端未配置 OPENAI_API_KEY"
     if "missing gemini_api_key" in lowered:
-        return "服务器未配置 GEMINI_API_KEY"
+        return "服务端未配置 GEMINI_API_KEY"
 
     return f"Agent run failed: {exc}"
 

@@ -20,6 +20,7 @@ body {
   margin: 0;
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--ink);
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 30%),
     radial-gradient(circle at bottom right, rgba(180, 83, 9, 0.12), transparent 28%),
@@ -62,12 +63,14 @@ body {
 .sidebar,
 .chat-panel {
   padding: 24px;
+  min-height: 100vh;
 }
 
 .sidebar {
   border-right: 1px solid var(--line);
   background: rgba(251, 247, 242, 0.82);
   backdrop-filter: blur(12px);
+  overflow: auto;
 }
 
 .brand,
@@ -164,6 +167,8 @@ p {
   display: grid;
   gap: 18px;
   grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .chat-header,
@@ -175,6 +180,9 @@ p {
   display: flex;
   justify-content: space-between;
   gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
 }
 
 .controls {
@@ -207,9 +215,11 @@ textarea {
 }
 
 .message-list {
-  min-height: 420px;
+  min-height: 0;
+  height: 100%;
   padding: 22px;
   overflow: auto;
+  scroll-behavior: smooth;
 }
 
 .empty-state {
@@ -269,6 +279,9 @@ textarea {
 .composer {
   display: grid;
   gap: 14px;
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
 }
 
 .quick-actions {
@@ -322,6 +335,10 @@ textarea {
 }
 
 @media (max-width: 960px) {
+  body {
+    overflow: auto;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -329,10 +346,12 @@ textarea {
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--line);
+    min-height: auto;
   }
 
   .chat-header {
     flex-direction: column;
+    position: static;
   }
 
   .controls {
@@ -347,5 +366,14 @@ textarea {
 
   .action-row {
     justify-content: space-between;
+  }
+
+  .chat-panel {
+    height: auto;
+    overflow: visible;
+  }
+
+  .composer {
+    position: static;
   }
 }

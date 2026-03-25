@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     default_gemini_model: str = "gemini-2.5-flash"
     default_zhipu_model: str = "glm-4.7"
     session_store_path: str = "data/sessions.json"
+    provider_timeout_seconds: float = 45.0
+    provider_max_retries: int = 1
 
     model_config = SettingsConfigDict(
         env_file=".env",

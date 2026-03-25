@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.attachment_utils import build_user_message_text
 from app.config import get_settings
+from app.provider_runner import run_with_retry
 from app.providers.gemini_provider import run_gemini_agent
 from app.providers.openai_provider import run_openai_agent
 from app.providers.zhipu_provider import run_zhipu_agent
@@ -48,6 +49,8 @@ def format_provider_error(exc: Exception) -> str:
 
     if "insufficient_quota" in lowered:
         return "OpenAI API 额度不足，请检查 billing 或充值后重试"
+    if "timed out" in lowered:
+        return "模型响应超时了，请稍后重试一次"
     if "resource_exhausted" in lowered:
         return "Gemini 当前模型额度不足，请稍后重试或切换到其他 Gemini 模型"
     if "api key was reported as leaked" in lowered:
@@ -90,11 +93,20 @@ async def run_agent(
 
     try:
         if request.provider == "openai":
-            model, output_text = await run_openai_agent(request, settings)
+            model, output_text = await run_with_retry(
+                lambda: run_openai_agent(request, settings),
+                settings,
+            )
         elif request.provider == "zhipu":
-            model, output_text = await run_zhipu_agent(request, settings)
+            model, output_text = await run_with_retry(
+                lambda: run_zhipu_agent(request, settings),
+                settings,
+            )
         else:
-            model, output_text = await run_gemini_agent(request, settings)
+            model, output_text = await run_with_retry(
+                lambda: run_gemini_agent(request, settings),
+                settings,
+            )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -154,41 +166,50 @@ async def chat_session(
 
     try:
         if request.provider == "openai":
-            model, output_text = await run_openai_agent(
-                AgentRunRequest(
-                    provider=request.provider,
-                    model=request.model,
-                    system_prompt=request.system_prompt,
-                    messages=messages,
-                    attachments=request.attachments,
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_output_tokens,
+            model, output_text = await run_with_retry(
+                lambda: run_openai_agent(
+                    AgentRunRequest(
+                        provider=request.provider,
+                        model=request.model,
+                        system_prompt=request.system_prompt,
+                        messages=messages,
+                        attachments=request.attachments,
+                        temperature=request.temperature,
+                        max_output_tokens=request.max_output_tokens,
+                    ),
+                    settings,
                 ),
                 settings,
             )
         elif request.provider == "zhipu":
-            model, output_text = await run_zhipu_agent(
-                AgentRunRequest(
-                    provider=request.provider,
-                    model=request.model,
-                    system_prompt=request.system_prompt,
-                    messages=messages,
-                    attachments=request.attachments,
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_output_tokens,
+            model, output_text = await run_with_retry(
+                lambda: run_zhipu_agent(
+                    AgentRunRequest(
+                        provider=request.provider,
+                        model=request.model,
+                        system_prompt=request.system_prompt,
+                        messages=messages,
+                        attachments=request.attachments,
+                        temperature=request.temperature,
+                        max_output_tokens=request.max_output_tokens,
+                    ),
+                    settings,
                 ),
                 settings,
             )
         else:
-            model, output_text = await run_gemini_agent(
-                AgentRunRequest(
-                    provider=request.provider,
-                    model=request.model,
-                    system_prompt=request.system_prompt,
-                    messages=messages,
-                    attachments=request.attachments,
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_output_tokens,
+            model, output_text = await run_with_retry(
+                lambda: run_gemini_agent(
+                    AgentRunRequest(
+                        provider=request.provider,
+                        model=request.model,
+                        system_prompt=request.system_prompt,
+                        messages=messages,
+                        attachments=request.attachments,
+                        temperature=request.temperature,
+                        max_output_tokens=request.max_output_tokens,
+                    ),
+                    settings,
                 ),
                 settings,
             )

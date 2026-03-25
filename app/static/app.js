@@ -308,7 +308,7 @@ async function submitTurn(event) {
 
   elements.sendButton.disabled = true;
   persistPreferences();
-  setStatus("正在调用模型...");
+  setStatus("正在调用模型，最多会自动重试一次...");
 
   try {
     const session = await fetchJson(`/v1/sessions/${state.activeSessionId}/chat`, {

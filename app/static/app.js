@@ -4,6 +4,7 @@ const state = {
   accessPassword: "",
   requiresPassword: false,
   attachments: [],
+  sidebarCollapsed: false,
 };
 
 const modelOptions = {
@@ -48,6 +49,9 @@ const elements = {
   logoutButton: document.getElementById("logout-button"),
   fileInput: document.getElementById("file-input"),
   attachmentList: document.getElementById("attachment-list"),
+  sidebar: document.getElementById("sidebar"),
+  sidebarToggle: document.getElementById("sidebar-toggle"),
+  sidebarToggleMobile: document.getElementById("sidebar-toggle-mobile"),
 };
 
 function escapeHtml(text) {
@@ -86,6 +90,11 @@ function formatContent(text) {
 
 function setStatus(text) {
   elements.statusText.textContent = text;
+}
+
+function applySidebarState() {
+  elements.sidebar.classList.toggle("collapsed", state.sidebarCollapsed && window.innerWidth > 960);
+  localStorage.setItem("cloud-agent-sidebar-collapsed", state.sidebarCollapsed ? "1" : "0");
 }
 
 function renderAttachments() {
@@ -171,6 +180,7 @@ function loadPreferences() {
   }
 
   state.accessPassword = localStorage.getItem("cloud-agent-access-password") || "";
+  state.sidebarCollapsed = localStorage.getItem("cloud-agent-sidebar-collapsed") === "1";
 }
 
 function setAuthStatus(text) {
@@ -417,9 +427,22 @@ elements.userMessage.addEventListener("keydown", (event) => {
 elements.quickChips.forEach((chip) => {
   chip.addEventListener("click", () => {
     elements.userMessage.value = chip.dataset.prompt || "";
+    elements.userMessage.dispatchEvent(new Event("input"));
     elements.userMessage.focus();
   });
 });
+
+elements.sidebarToggle.addEventListener("click", () => {
+  state.sidebarCollapsed = !state.sidebarCollapsed;
+  applySidebarState();
+});
+
+elements.sidebarToggleMobile.addEventListener("click", () => {
+  state.sidebarCollapsed = !state.sidebarCollapsed;
+  applySidebarState();
+});
+
+window.addEventListener("resize", applySidebarState);
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -477,6 +500,7 @@ elements.fileInput.addEventListener("change", async (event) => {
 async function bootstrap() {
   loadPreferences();
   syncModelOptions(elements.model.value);
+  applySidebarState();
 
   setStatus("正在加载...");
   await loadPublicConfig();

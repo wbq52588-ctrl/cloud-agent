@@ -24,10 +24,15 @@
     </div>
 
     <div class="app-shell">
-      <aside class="sidebar">
+      <aside id="sidebar" class="sidebar">
         <div class="brand">
-          <p class="eyebrow">Cloud Agent</p>
-          <h1>Model Console</h1>
+          <div class="brand-top">
+            <div>
+              <p class="eyebrow">Cloud Agent</p>
+              <h1>Model Console</h1>
+            </div>
+            <button id="sidebar-toggle" type="button" class="ghost-button">折叠</button>
+          </div>
           <button id="new-chat-button" class="primary-button">新建会话</button>
         </div>
         <div class="sidebar-section">
@@ -38,6 +43,9 @@
 
       <main class="chat-panel">
         <header class="chat-header">
+          <div class="mobile-actions">
+            <button id="sidebar-toggle-mobile" type="button" class="ghost-button">会话栏</button>
+          </div>
           <div>
             <p class="eyebrow">Multi Model Agent</p>
             <h2 id="chat-title">请选择或新建一个会话</h2>
@@ -67,27 +75,31 @@
         </section>
 
         <form id="chat-form" class="composer">
-          <div class="quick-actions">
-            <button type="button" class="quick-chip" data-prompt="帮我写一份 VPS 部署检查清单">VPS 检查清单</button>
-            <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
-            <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">整理需求</button>
+          <div class="composer-top">
+            <div class="quick-actions">
+              <button type="button" class="quick-chip" data-prompt="帮我写一份 VPS 部署检查清单">VPS 检查清单</button>
+              <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
+              <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">整理需求</button>
+            </div>
+            <div class="tool-row">
+              <label class="upload-box compact-label">
+                <span>附件</span>
+                <input
+                  id="file-input"
+                  type="file"
+                  multiple
+                  accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
+                />
+              </label>
+              <label class="system-prompt compact-label">
+                <span>系统提示词</span>
+                <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>
+              </label>
+            </div>
           </div>
-          <label class="upload-box">
-            上传图片或文本文件
-            <input
-              id="file-input"
-              type="file"
-              multiple
-              accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
-            />
-          </label>
           <div id="attachment-list" class="attachment-list"></div>
-          <label class="system-prompt">
-            系统提示词
-            <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>
-          </label>
           <label class="message-box">
-            发送消息
+            <span>发送消息</span>
             <textarea id="user-message" rows="4" placeholder="输入你的问题..." required></textarea>
           </label>
           <div class="composer-actions">

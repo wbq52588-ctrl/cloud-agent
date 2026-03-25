@@ -72,6 +72,17 @@ body {
   backdrop-filter: blur(12px);
   overflow: auto;
   max-height: 100dvh;
+  transition: width 180ms ease, padding 180ms ease, opacity 180ms ease;
+}
+
+.sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-right: none;
+  opacity: 0;
+  overflow: hidden;
 }
 
 .brand,
@@ -88,6 +99,13 @@ body {
 .brand,
 .sidebar-section {
   padding: 20px;
+}
+
+.brand-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .sidebar-section {
@@ -182,6 +200,10 @@ p {
   justify-content: space-between;
   gap: 16px;
   flex: 0 0 auto;
+}
+
+.mobile-actions {
+  display: none;
 }
 
 .controls {
@@ -324,10 +346,25 @@ textarea {
   backdrop-filter: blur(14px);
 }
 
+.composer-top {
+  display: grid;
+  gap: 12px;
+}
+
 .quick-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.tool-row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 12px;
+}
+
+.compact-label {
+  gap: 6px;
 }
 
 .quick-chip {
@@ -340,13 +377,13 @@ textarea {
 }
 
 .upload-box input[type="file"] {
-  padding: 10px;
+  padding: 8px;
   background: #fffdfa;
 }
 
 .message-box textarea {
-  min-height: 108px;
-  max-height: 260px;
+  min-height: 88px;
+  max-height: 220px;
 }
 
 .attachment-list {
@@ -389,6 +426,9 @@ textarea {
     border-bottom: 1px solid var(--line);
     min-height: auto;
     max-height: none;
+    width: 100%;
+    opacity: 1;
+    padding: 24px;
   }
 
   .chat-header {
@@ -396,6 +436,14 @@ textarea {
   }
 
   .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-actions {
+    display: block;
+  }
+
+  .tool-row {
     grid-template-columns: 1fr;
   }
 

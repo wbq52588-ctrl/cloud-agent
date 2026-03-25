@@ -11,7 +11,7 @@ def _resolve_base_url(model: str, settings: Settings) -> str:
     return settings.zhipu_base_url
 
 
-def _to_zhipu_input(system_prompt: str | None, messages: list[ChatMessage], attachments) -> list[dict]:
+def _to_zhipu_messages(system_prompt: str | None, messages: list[ChatMessage], attachments) -> list[dict]:
     payload: list[dict] = []
     last_index = len(messages) - 1
 
@@ -19,28 +19,15 @@ def _to_zhipu_input(system_prompt: str | None, messages: list[ChatMessage], atta
         payload.append(
             {
                 "role": "system",
-                "content": [{"type": "input_text", "text": system_prompt}],
+                "content": system_prompt,
             }
         )
 
     for index, message in enumerate(messages):
-        content = [{"type": "input_text", "text": message.content}]
+        content = message.content
 
         if index == last_index and message.role == "user" and attachments:
-            content = [
-                {
-                    "type": "input_text",
-                    "text": build_user_message_text(message.content, attachments),
-                }
-            ]
-            for attachment in attachments:
-                if attachment.kind == "image" and attachment.data_url:
-                    content.append(
-                        {
-                            "type": "input_image",
-                            "image_url": attachment.data_url,
-                        }
-                    )
+            content = build_user_message_text(message.content, attachments)
 
         payload.append(
             {
@@ -61,11 +48,12 @@ async def run_zhipu_agent(request: AgentRunRequest, settings: Settings) -> tuple
         api_key=settings.zhipu_api_key,
         base_url=_resolve_base_url(model, settings),
     )
-    response = await client.responses.create(
+    response = await client.chat.completions.create(
         model=model,
-        input=_to_zhipu_input(request.system_prompt, request.messages, request.attachments),
+        messages=_to_zhipu_messages(request.system_prompt, request.messages, request.attachments),
         temperature=request.temperature,
-        max_output_tokens=request.max_output_tokens,
+        max_tokens=request.max_output_tokens,
     )
 
-    return model, response.output_text
+    output_text = response.choices[0].message.content or ""
+    return model, output_text

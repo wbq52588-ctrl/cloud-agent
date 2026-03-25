@@ -1,10 +1,10 @@
 # Multi Model Agent
 
-一个可直接部署到云服务的轻量多模型 Agent，统一调用 OpenAI 和 Gemini 模型，并自带网页聊天界面。
+一个可直接部署到云服务的轻量多模型 Agent，统一调用 OpenAI、Gemini 和 GLM / Zhipu 模型，并自带网页聊天界面。
 
 ## 功能
 
-- 单个 HTTP 接口切换 `openai` / `gemini`
+- 单个 HTTP 接口切换 `openai` / `gemini` / `zhipu`
 - 支持 `system_prompt`、多轮 `messages`、`temperature`、`max_output_tokens`
 - 自带网页聊天页、会话列表和上下文保留
 - 自带 `docker-compose.yml` 和服务器更新脚本
@@ -49,9 +49,13 @@ Gemini 只需要把 `provider` 改成 `gemini`。
 
 - `OPENAI_API_KEY`: OpenAI API Key
 - `GEMINI_API_KEY`: Gemini API Key
+- `ZHIPU_API_KEY`: 智谱 API Key
+- `ZHIPU_BASE_URL`: 智谱通用端点，默认 `https://open.bigmodel.cn/api/paas/v4`
+- `ZHIPU_CODING_BASE_URL`: 智谱 Coding 端点，默认 `https://open.bigmodel.cn/api/coding/paas/v4`
 - `APP_ACCESS_PASSWORD`: 网页和 API 的基础访问口令
 - `DEFAULT_OPENAI_MODEL`: 默认 `gpt-4.1-mini`
 - `DEFAULT_GEMINI_MODEL`: 默认 `gemini-2.5-flash`
+- `DEFAULT_ZHIPU_MODEL`: 默认 `glm-4.7`
 - `SESSION_STORE_PATH`: 会话存储文件，默认 `data/sessions.json`
 
 ## 会话持久化

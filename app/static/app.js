@@ -16,11 +16,16 @@ const modelOptions = {
     { value: "gpt-4.1", label: "GPT-4.1" },
     { value: "gpt-5.4", label: "GPT-5.4" },
   ],
+  zhipu: [
+    { value: "glm-4.7", label: "GLM-4.7" },
+    { value: "glm-4.5-air", label: "GLM-4.5 Air" },
+  ],
 };
 
 const modelDefaults = {
   gemini: "gemini-2.5-flash",
   openai: "gpt-4.1-mini",
+  zhipu: "glm-4.7",
 };
 
 const elements = {

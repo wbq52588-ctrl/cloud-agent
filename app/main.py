@@ -8,6 +8,7 @@ from app.attachment_utils import build_user_message_text
 from app.config import get_settings
 from app.providers.gemini_provider import run_gemini_agent
 from app.providers.openai_provider import run_openai_agent
+from app.providers.zhipu_provider import run_zhipu_agent
 from app.schemas import (
     AgentRunRequest,
     AgentRunResponse,
@@ -51,6 +52,8 @@ def format_provider_error(exc: Exception) -> str:
         return "Gemini 当前模型额度不足，请稍后重试或切换到其他 Gemini 模型"
     if "api key was reported as leaked" in lowered:
         return "Gemini API Key 已被判定泄露，请更换新的 Key"
+    if "missing zhipu_api_key" in lowered:
+        return "服务器未配置 ZHIPU_API_KEY"
     if "permission_denied" in lowered:
         return "模型服务拒绝了这次请求，请检查 API Key 权限"
     if "missing openai_api_key" in lowered:
@@ -88,6 +91,8 @@ async def run_agent(
     try:
         if request.provider == "openai":
             model, output_text = await run_openai_agent(request, settings)
+        elif request.provider == "zhipu":
+            model, output_text = await run_zhipu_agent(request, settings)
         else:
             model, output_text = await run_gemini_agent(request, settings)
     except ValueError as exc:
@@ -150,6 +155,19 @@ async def chat_session(
     try:
         if request.provider == "openai":
             model, output_text = await run_openai_agent(
+                AgentRunRequest(
+                    provider=request.provider,
+                    model=request.model,
+                    system_prompt=request.system_prompt,
+                    messages=messages,
+                    attachments=request.attachments,
+                    temperature=request.temperature,
+                    max_output_tokens=request.max_output_tokens,
+                ),
+                settings,
+            )
+        elif request.provider == "zhipu":
+            model, output_text = await run_zhipu_agent(
                 AgentRunRequest(
                     provider=request.provider,
                     model=request.model,

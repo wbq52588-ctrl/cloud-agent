@@ -8,9 +8,13 @@ class Settings(BaseSettings):
     app_env: str = "development"
     openai_api_key: str | None = None
     gemini_api_key: str | None = None
+    zhipu_api_key: str | None = None
+    zhipu_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+    zhipu_coding_base_url: str = "https://open.bigmodel.cn/api/coding/paas/v4"
     app_access_password: str | None = None
     default_openai_model: str = "gpt-4.1-mini"
     default_gemini_model: str = "gemini-2.5-flash"
+    default_zhipu_model: str = "glm-4.7"
     session_store_path: str = "data/sessions.json"
 
     model_config = SettingsConfigDict(

@@ -182,6 +182,10 @@ p {
   font-size: 12px;
 }
 
+.session-meta {
+  opacity: 0.82;
+}
+
 .chat-panel {
   display: flex;
   flex-direction: column;
@@ -260,15 +264,18 @@ textarea {
   border-radius: 18px;
   line-height: 1.6;
   box-shadow: 0 8px 24px rgba(50, 36, 20, 0.08);
+  border: 1px solid rgba(222, 210, 196, 0.75);
 }
 
 .message.user {
   margin-left: auto;
   background: var(--user);
+  border-bottom-right-radius: 8px;
 }
 
 .message.assistant {
   background: var(--assistant);
+  border-bottom-left-radius: 8px;
 }
 
 .message-content {
@@ -312,7 +319,7 @@ textarea {
 
 .message-role {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;

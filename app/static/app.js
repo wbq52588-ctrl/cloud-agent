@@ -88,6 +88,38 @@ function formatContent(text) {
     .join("");
 }
 
+function formatRelativeTime(iso) {
+  if (!iso) {
+    return "刚刚";
+  }
+
+  const timestamp = new Date(iso).getTime();
+  if (Number.isNaN(timestamp)) {
+    return iso;
+  }
+
+  const diffSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (diffSeconds < 60) {
+    return "刚刚";
+  }
+  if (diffSeconds < 3600) {
+    return `${Math.floor(diffSeconds / 60)} 分钟前`;
+  }
+  if (diffSeconds < 86400) {
+    return `${Math.floor(diffSeconds / 3600)} 小时前`;
+  }
+  if (diffSeconds < 86400 * 7) {
+    return `${Math.floor(diffSeconds / 86400)} 天前`;
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
 function setStatus(text) {
   elements.statusText.textContent = text;
 }
@@ -219,6 +251,7 @@ function renderSessions() {
         <button class="session-item ${session.session_id === state.activeSessionId ? "active" : ""}" data-session-id="${session.session_id}">
           <strong>${escapeHtml(session.title)}</strong>
           <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
+          <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
         </button>
       `,
     )
@@ -245,7 +278,7 @@ function renderMessages(messages) {
       (message, index) => `
         <article class="message ${message.role}">
           <div class="message-toolbar">
-            <span class="message-role">${message.role}</span>
+            <span class="message-role">${message.role === "user" ? "你" : "助手"}</span>
             <button type="button" class="ghost-button" data-copy-index="${index}">复制</button>
           </div>
           <div class="message-content">${formatContent(message.content)}</div>
@@ -364,6 +397,7 @@ async function submitTurn(event) {
     });
 
     elements.userMessage.value = "";
+    elements.userMessage.dispatchEvent(new Event("input"));
     state.attachments = [];
     elements.fileInput.value = "";
     renderAttachments();
@@ -508,6 +542,7 @@ async function bootstrap() {
   loadPreferences();
   syncModelOptions(elements.model.value);
   applySidebarState();
+  elements.userMessage.dispatchEvent(new Event("input"));
 
   setStatus("正在加载...");
   await loadPublicConfig();

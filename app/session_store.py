@@ -13,6 +13,13 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _summarize_title(text: str) -> str:
+    cleaned = " ".join(text.strip().split())
+    if not cleaned:
+        return "新会话"
+    return cleaned[:28] + ("..." if len(cleaned) > 28 else "")
+
+
 class SessionStore:
     def __init__(self, store_path: str) -> None:
         self._lock = Lock()
@@ -43,7 +50,7 @@ class SessionStore:
             session_id = uuid4().hex
             session = SessionDetail(
                 session_id=session_id,
-                title=title or "New chat",
+                title=title or "新会话",
                 provider=None,
                 model=None,
                 updated_at=_now_iso(),
@@ -95,8 +102,8 @@ class SessionStore:
             if session is None:
                 return None
 
-            if session.title == "New chat":
-                session.title = user_message[:40]
+            if session.title == "新会话":
+                session.title = _summarize_title(user_message)
 
             session.system_prompt = system_prompt
             session.provider = provider

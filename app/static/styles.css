@@ -749,14 +749,20 @@ textarea {
   }
 
   .chat-header {
-    padding: calc(14px + env(safe-area-inset-top)) 18px 6px;
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    padding: calc(10px + env(safe-area-inset-top)) 14px 6px;
+    background: linear-gradient(180deg, rgba(7, 9, 13, 0.98), rgba(7, 9, 13, 0.9));
+    backdrop-filter: blur(18px);
   }
 
   .mobile-topbar {
     display: grid;
-    grid-template-columns: 44px 1fr 44px;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
     align-items: center;
-    min-height: 44px;
+    min-height: 42px;
+    gap: 10px;
   }
 
   .mobile-topbar-title {
@@ -769,7 +775,7 @@ textarea {
   .mobile-hero {
     display: grid;
     gap: 8px;
-    padding: 14px 0 8px;
+    padding: 12px 2px 8px;
   }
 
   .mobile-hero-kicker {
@@ -813,6 +819,11 @@ textarea {
     color: var(--dark-text);
   }
 
+  .mobile-nav-button {
+    position: relative;
+    z-index: 14;
+  }
+
   .mobile-nav-button span {
     display: block;
     width: 18px;
@@ -828,6 +839,18 @@ textarea {
   .transcript-shell {
     min-height: 0;
     padding: 0 0 4px;
+  }
+
+  body.has-conversation .mobile-hero {
+    display: none;
+  }
+
+  body.has-conversation .chat-header {
+    padding-bottom: 4px;
+  }
+
+  body.has-conversation .message-list {
+    padding-top: 4px;
   }
 
   .message-list {

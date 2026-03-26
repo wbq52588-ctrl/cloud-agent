@@ -199,7 +199,7 @@ function syncTopbarTitle() {
 
 function syncGreetingState() {
   const hasMessages = state.activeMessages.length > 0;
-  elements.mobileGreetingTitle.textContent = hasMessages ? elements.chatTitle.textContent : "需要我为你做些什么？";
+  elements.mobileGreetingTitle.textContent = "需要我为你做些什么？";
   elements.mobileGreetingSubtitle.textContent = hasMessages
     ? `${providerLabel(elements.provider.value)} 已准备好`
     : "你好，欢迎回来";

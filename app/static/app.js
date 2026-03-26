@@ -326,6 +326,51 @@ function renderMessages(messages, pending = null) {
   elements.messageList.scrollTop = elements.messageList.scrollHeight;
 }
 
+function renderMessages(messages, pending = null) {
+  if (!messages.length && !pending) {
+    elements.messageList.innerHTML = `
+      <div class="empty-state">
+        <h3>开始第一轮对话</h3>
+        <p>发出消息后会先显示你的消息和助手占位卡片，不用再盯着页面干等。</p>
+      </div>
+    `;
+    return;
+  }
+
+  const items = [...messages];
+  if (pending) {
+    items.push({ role: "user", content: pending.userText });
+    items.push({ role: "assistant", content: pending.placeholder, pending: true });
+  }
+
+  elements.messageList.innerHTML = items
+    .map((message, index) => {
+      const title = message.role === "user" ? "你" : message.pending ? "思考中" : "助手";
+      return `
+        <article class="message-row ${message.role}">
+          <article class="message ${message.role} ${message.pending ? "pending" : ""}">
+            <div class="message-toolbar">
+              <span class="message-role">${title}</span>
+              ${message.pending ? "" : `<button type="button" class="ghost-button message-copy-button" data-copy-index="${index}">复制</button>`}
+            </div>
+            <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
+          </article>
+        </article>
+      `;
+    })
+    .join("");
+
+  document.querySelectorAll("[data-copy-index]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const index = Number(button.dataset.copyIndex);
+      await navigator.clipboard.writeText(items[index].content);
+      setStatus("已复制消息内容");
+    });
+  });
+
+  elements.messageList.scrollTop = elements.messageList.scrollHeight;
+}
+
 async function fetchJson(url, options = {}) {
   const headers = {
     ...(options.headers || {}),

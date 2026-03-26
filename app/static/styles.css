@@ -300,41 +300,18 @@ textarea {
 }
 
 .message-row {
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
+  display: flex;
+  width: 100%;
 }
 
 .message-row.user {
-  justify-items: end;
-}
-
-.message-row.user .message-badge {
-  order: 2;
-}
-
-.message-row.user .message {
-  order: 1;
-}
-
-.message-badge {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--accent-strong);
-  background: rgba(15, 118, 110, 0.12);
-  border: 1px solid rgba(15, 118, 110, 0.2);
+  justify-content: flex-end;
 }
 
 .message {
-  width: min(100%, 860px);
-  padding: 18px 20px;
-  border-radius: 20px;
+  width: min(100%, 920px);
+  padding: 14px 16px;
+  border-radius: 18px;
   line-height: 1.7;
   box-shadow: 0 8px 24px rgba(50, 36, 20, 0.08);
   border: 1px solid rgba(222, 210, 196, 0.75);
@@ -344,11 +321,13 @@ textarea {
 .message.user {
   background: var(--user);
   border-bottom-right-radius: 8px;
+  max-width: min(72%, 760px);
 }
 
 .message.assistant {
   background: var(--assistant);
   border-bottom-left-radius: 8px;
+  max-width: min(88%, 920px);
 }
 
 .message.pending {
@@ -358,33 +337,29 @@ textarea {
 .message-toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.message-meta {
-  display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
-.message-role,
-.message-time {
+.message-role {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .message-content {
   color: var(--ink);
-  line-height: 1.8;
+  line-height: 1.75;
   word-break: break-word;
-  font-size: 15px;
-  max-width: 72ch;
+  font-size: 14px;
+  max-width: 76ch;
+}
+
+.message-copy-button {
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 .message-content p {

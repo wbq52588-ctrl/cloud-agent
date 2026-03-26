@@ -549,18 +549,54 @@ textarea {
     transform: translateX(0);
   }
 
+  .brand {
+    padding: 16px;
+  }
+
+  .brand h1 {
+    font-size: 2rem;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+
+  .sidebar-section {
+    margin-top: 14px;
+    padding: 14px;
+  }
+
+  .session-list {
+    gap: 8px;
+  }
+
+  .session-item {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .session-item strong {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .session-item span {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
   .chat-panel {
     grid-template-rows: auto minmax(0, 1fr) auto;
     height: 100vh;
     max-height: 100vh;
     min-height: 0;
     overflow: hidden;
-    padding: 14px;
+    padding: 10px;
+    gap: 10px;
   }
 
   .chat-header {
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
+    padding: 12px 14px;
   }
 
   .mobile-actions {
@@ -571,15 +607,26 @@ textarea {
   .sidebar-section,
   .chat-header,
   .composer {
-    border-radius: 20px;
+    border-radius: 18px;
+  }
+
+  .chat-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+  }
+
+  .chat-header .header-note {
+    display: none;
   }
 
   .controls {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .tool-row {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .quick-actions,
@@ -592,15 +639,19 @@ textarea {
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 2px;
+    gap: 8px;
   }
 
   .quick-chip {
     white-space: nowrap;
+    padding: 7px 11px;
+    font-size: 13px;
   }
 
   .action-row {
     justify-content: stretch;
     flex-wrap: wrap;
+    gap: 8px;
   }
 
   .message-row {
@@ -619,6 +670,8 @@ textarea {
   .message {
     width: 100%;
     max-width: 100%;
+    padding: 12px 13px;
+    border-radius: 16px;
   }
 
   .transcript-shell {
@@ -628,14 +681,92 @@ textarea {
 
   .message-list {
     min-height: 0;
+    padding: 12px 10px 14px;
+    gap: 12px;
   }
 
   .composer {
-    gap: 10px;
+    gap: 8px;
+    padding: 10px 12px 12px;
+  }
+
+  .composer-top {
+    gap: 8px;
   }
 
   .status-text {
+    display: none;
+  }
+
+  .composer .compact-label > span,
+  .message-box > span {
     font-size: 12px;
     letter-spacing: 0.03em;
+  }
+
+  .upload-box input[type="file"] {
+    font-size: 12px;
+    padding: 7px;
+  }
+
+  .message-box textarea,
+  .system-prompt textarea {
+    border-radius: 12px;
+    padding: 11px 12px;
+  }
+
+  .message-box textarea {
+    min-height: 52px;
+    max-height: 132px;
+  }
+
+  .composer-actions {
+    gap: 8px;
+  }
+
+  .action-row .ghost-button,
+  .action-row .primary-button {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+
+  .action-row #logout-button {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    width: min(88vw, 320px);
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-top {
+    align-items: center;
+  }
+
+  .brand h1 {
+    font-size: 1.75rem;
+  }
+
+  .chat-header h2 {
+    font-size: 1.55rem;
+  }
+
+  .eyebrow,
+  .section-title {
+    font-size: 11px;
+  }
+
+  .ghost-button {
+    padding: 7px 11px;
+  }
+
+  .message-content {
+    font-size: 13px;
+    line-height: 1.65;
   }
 }

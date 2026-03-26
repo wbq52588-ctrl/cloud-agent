@@ -9,6 +9,7 @@ const state = {
   isGenerating: false,
   abortController: null,
   openSheet: null,
+  mobileControlsExpanded: false,
 };
 
 const modelOptions = {
@@ -118,6 +119,8 @@ const elements = {
   toolsMenuToggle: document.getElementById("tools-menu-toggle"),
   modelSheetToggle: document.getElementById("model-sheet-toggle"),
   advancedSheetToggle: document.getElementById("advanced-sheet-toggle"),
+  mobileControlsToggle: document.getElementById("mobile-controls-toggle"),
+  mobileToolbarRow: document.getElementById("mobile-toolbar-row"),
   attachmentFileTrigger: document.getElementById("attachment-file-trigger"),
   attachmentImageTrigger: document.getElementById("attachment-image-trigger"),
   mobileProviderTitle: document.getElementById("mobile-provider-title"),
@@ -214,6 +217,27 @@ function closeAllSheets() {
   elements.sheetBackdrop.classList.add("hidden");
 }
 
+function syncMobileControls() {
+  if (!elements.mobileToolbarRow || !elements.mobileControlsToggle) {
+    return;
+  }
+  const expanded = state.mobileControlsExpanded && isMobileViewport();
+  elements.mobileToolbarRow.classList.toggle("hidden", !expanded);
+  elements.mobileToolbarRow.classList.toggle("is-open", expanded);
+  elements.mobileControlsToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+  elements.mobileControlsToggle.classList.toggle("is-active", expanded);
+}
+
+function closeMobileControls() {
+  state.mobileControlsExpanded = false;
+  syncMobileControls();
+}
+
+function toggleMobileControls() {
+  state.mobileControlsExpanded = !state.mobileControlsExpanded;
+  syncMobileControls();
+}
+
 function openSheet(name) {
   const map = {
     attachment: elements.attachmentSheet,
@@ -229,6 +253,7 @@ function openSheet(name) {
     return;
   }
 
+  closeMobileControls();
   closeAllSheets();
   state.openSheet = name;
   nextSheet.classList.remove("hidden");
@@ -239,6 +264,7 @@ function openSheet(name) {
 
 function syncResponsiveState() {
   if (!isMobileViewport()) {
+    closeMobileControls();
     closeAllSheets();
   }
   if (elements.toolsDisclosure) {
@@ -854,6 +880,7 @@ function bindEvents() {
       elements.userMessage.dispatchEvent(new Event("input"));
       elements.userMessage.focus();
       closeAllSheets();
+      closeMobileControls();
     });
   });
 
@@ -866,15 +893,17 @@ function bindEvents() {
   elements.toolsMenuToggle?.addEventListener("click", () => openSheet("tools"));
   elements.modelSheetToggle?.addEventListener("click", () => openSheet("model"));
   elements.advancedSheetToggle?.addEventListener("click", () => openSheet("advanced"));
+  elements.mobileControlsToggle?.addEventListener("click", toggleMobileControls);
   elements.sheetBackdrop?.addEventListener("click", closeAllSheets);
   [elements.messageList, elements.transcriptShell, elements.chatPanel].forEach((element) => {
     element?.addEventListener("click", (event) => {
-      if (!state.openSheet) {
+      if (!state.openSheet && !state.mobileControlsExpanded) {
         return;
       }
       if (event.target.closest(".composer") || event.target.closest(".bottom-sheet") || event.target.closest(".mobile-toolbar")) {
         return;
       }
+      closeMobileControls();
       closeAllSheets();
     });
   });
@@ -918,6 +947,7 @@ function bindEvents() {
   window.addEventListener("resize", () => {
     syncResponsiveState();
     applySidebarState();
+    syncMobileControls();
   });
 }
 
@@ -928,6 +958,7 @@ async function bootstrap() {
   syncComposerState();
   syncResponsiveState();
   applySidebarState();
+  syncMobileControls();
   syncTopbarTitle();
   syncMessagePlaceholder();
   bindEvents();

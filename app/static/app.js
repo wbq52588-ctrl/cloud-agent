@@ -55,6 +55,8 @@ const elements = {
   chatForm: document.getElementById("chat-form"),
   newChatButton: document.getElementById("new-chat-button"),
   quickChips: document.querySelectorAll(".quick-chip"),
+  quickActionsPanel: document.getElementById("quick-actions-panel"),
+  quickActionsToggle: document.getElementById("quick-actions-toggle"),
   authOverlay: document.getElementById("auth-overlay"),
   accessPassword: document.getElementById("access-password"),
   authSubmit: document.getElementById("auth-submit"),
@@ -148,6 +150,17 @@ function syncResponsiveComposer() {
     return;
   }
   elements.toolsDisclosure.open = !isMobileViewport();
+  if (elements.quickActionsPanel && !isMobileViewport()) {
+    elements.quickActionsPanel.classList.remove("panel-open");
+  }
+}
+
+function toggleQuickActionsPanel(forceOpen = null) {
+  if (!elements.quickActionsPanel) {
+    return;
+  }
+  const nextState = forceOpen ?? !elements.quickActionsPanel.classList.contains("panel-open");
+  elements.quickActionsPanel.classList.toggle("panel-open", nextState);
 }
 
 function syncComposerState() {
@@ -543,6 +556,10 @@ async function submitTurn(event) {
     elements.chatTitle.textContent = session.title;
   }
 
+  if (isMobileViewport()) {
+    toggleQuickActionsPanel(false);
+  }
+
   state.pendingUserMessage = userMessage;
   state.abortController = new AbortController();
   state.isGenerating = true;
@@ -661,7 +678,14 @@ elements.quickChips.forEach((chip) => {
     elements.userMessage.value = chip.dataset.prompt || "";
     elements.userMessage.dispatchEvent(new Event("input"));
     elements.userMessage.focus();
+    if (isMobileViewport()) {
+      toggleQuickActionsPanel(false);
+    }
   });
+});
+
+elements.quickActionsToggle?.addEventListener("click", () => {
+  toggleQuickActionsPanel();
 });
 
 elements.sidebarToggle.addEventListener("click", () => {

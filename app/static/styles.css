@@ -454,6 +454,19 @@ textarea {
   gap: 10px;
 }
 
+.quick-actions-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.quick-actions-sheet-header {
+  display: none;
+}
+
+#quick-actions-toggle {
+  display: none;
+}
+
 .tools-disclosure {
   border: 1px solid rgba(222, 210, 196, 0.85);
   border-radius: 16px;
@@ -747,11 +760,11 @@ textarea {
   }
 
   .quick-actions {
-    overflow-x: auto;
+    overflow-y: auto;
     flex-wrap: wrap;
-    padding: 0 14px 8px;
+    padding: 0;
     gap: 12px;
-    background: #17191d;
+    background: transparent;
   }
 
   .quick-chip {
@@ -762,6 +775,34 @@ textarea {
     border-radius: 999px;
     background: #1f2126;
     color: #d6dbe4;
+  }
+
+  .quick-actions-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 18;
+    padding: 14px 14px calc(22px + env(safe-area-inset-bottom));
+    border-radius: 28px 28px 0 0;
+    background: #2a2d31;
+    box-shadow: 0 -20px 44px rgba(0, 0, 0, 0.35);
+    transform: translateY(108%);
+    transition: transform 180ms ease;
+  }
+
+  .quick-actions-panel.panel-open {
+    transform: translateY(0);
+  }
+
+  .quick-actions-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #cfd6df;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 0 4px 4px;
   }
 
   .action-row {
@@ -909,6 +950,17 @@ textarea {
   .action-row .primary-button {
     flex: 0 0 auto;
     min-height: 46px;
+  }
+
+  .action-row #quick-actions-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    border-radius: 999px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #d3d8e0;
   }
 
   .action-row #logout-button {

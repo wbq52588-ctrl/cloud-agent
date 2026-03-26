@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260326k" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260326l" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -83,10 +83,13 @@
 
         <form id="chat-form" class="composer">
           <div class="composer-top">
+            <div id="quick-actions-panel" class="quick-actions-panel">
+              <div class="quick-actions-sheet-header"><span>工具</span></div>
             <div class="quick-actions">
               <button type="button" class="quick-chip" data-prompt="帮我写一份 VPS 部署检查清单">VPS 检查清单</button>
               <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
               <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">整理需求</button>
+            </div>
             </div>
             <details id="tools-disclosure" class="tools-disclosure" open>
               <summary class="tools-summary">高级选项</summary>
@@ -115,6 +118,7 @@
           <div class="composer-actions">
             <span id="status-text" class="status-text">服务就绪，按 Ctrl/Cmd + Enter 可发送</span>
             <div class="action-row">
+              <button id="quick-actions-toggle" type="button" class="ghost-button">工具</button>
               <button id="stop-button" type="button" class="ghost-button hidden">停止等待</button>
               <button id="logout-button" type="button" class="ghost-button">退出登录</button>
               <button id="send-button" type="submit" class="primary-button">发送</button>
@@ -124,6 +128,6 @@
       </main>
     </div>
 
-    <script src="/static/app.js?v=20260326k"></script>
+    <script src="/static/app.js?v=20260326l"></script>
   </body>
 </html>

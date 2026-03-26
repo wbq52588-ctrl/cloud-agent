@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260327p" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260327q" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -135,7 +135,10 @@
               <div class="mobile-text-entry">
                 <textarea id="user-message" rows="1" placeholder="问问 Gemini" required></textarea>
               </div>
-              <button id="send-button" type="submit" class="round-send-button" aria-label="发送">发送</button>
+              <button id="send-button" type="submit" class="round-send-button" aria-label="发送">
+                <span class="visually-hidden">发送</span>
+                <span class="send-glyph" aria-hidden="true"></span>
+              </button>
             </div>
             <div id="mobile-toolbar-row" class="mobile-toolbar-row">
               <button id="tools-menu-toggle" type="button" class="round-tool-button" aria-label="打开工具菜单">工具</button>
@@ -232,6 +235,6 @@
       </div>
     </div>
 
-    <script src="/static/app.js?v=20260327p"></script>
+    <script src="/static/app.js?v=20260327q"></script>
   </body>
 </html>

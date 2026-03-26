@@ -865,6 +865,9 @@ function bindEvents() {
   elements.modelSheetToggle?.addEventListener("click", () => openSheet("model"));
   elements.advancedSheetToggle?.addEventListener("click", () => openSheet("advanced"));
   elements.sheetBackdrop?.addEventListener("click", closeAllSheets);
+  document.querySelectorAll("[data-close-sheet]").forEach((button) => {
+    button.addEventListener("click", closeAllSheets);
+  });
 
   elements.attachmentFileTrigger?.addEventListener("click", () => {
     elements.fileInput.accept = "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh";

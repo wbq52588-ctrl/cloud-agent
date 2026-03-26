@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260327f" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260327g" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -142,14 +142,11 @@
               </div>
               <button id="send-button" type="submit" class="round-send-button" aria-label="发送">发送</button>
             </div>
-            <div class="mobile-toolbar-shell">
-              <button id="mobile-controls-toggle" type="button" class="mobile-control-pill" aria-expanded="false">工具与模式</button>
-              <button id="stop-button" type="button" class="round-tool-button hidden">停止</button>
-            </div>
-            <div id="mobile-toolbar-row" class="mobile-toolbar-row hidden">
+            <div id="mobile-toolbar-row" class="mobile-toolbar-row">
               <button id="tools-menu-toggle" type="button" class="round-tool-button" aria-label="打开工具菜单">工具</button>
               <button id="model-sheet-toggle" type="button" class="round-tool-button" aria-label="选择模型">模型</button>
               <button id="advanced-sheet-toggle" type="button" class="round-tool-button" aria-label="高级选项">选项</button>
+              <button id="stop-button" type="button" class="round-tool-button hidden">停止</button>
             </div>
           </div>
 
@@ -209,6 +206,7 @@
         <h3>模型模式</h3>
         <button type="button" class="sheet-close-button" data-close-sheet aria-label="关闭">×</button>
       </div>
+      <p class="sheet-subtitle">选择当前使用的提供方与模式</p>
       <div class="sheet-form hidden">
         <label>
           模型提供方
@@ -245,6 +243,6 @@
       accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
     />
 
-    <script src="/static/app.js?v=20260327f"></script>
+    <script src="/static/app.js?v=20260327g"></script>
   </body>
 </html>

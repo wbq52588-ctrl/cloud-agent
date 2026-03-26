@@ -56,6 +56,8 @@ const elements = {
   model: document.getElementById("model"),
   providerMobile: document.getElementById("provider-mobile"),
   modelMobile: document.getElementById("model-mobile"),
+  providerChipList: document.getElementById("provider-chip-list"),
+  modelCardList: document.getElementById("model-card-list"),
   systemPromptDesktop: document.getElementById("system-prompt"),
   systemPromptMobile: document.getElementById("system-prompt-mobile"),
   userMessage: document.getElementById("user-message"),
@@ -329,8 +331,66 @@ function syncModelOptions(preferredModel) {
   const nextValue = options.some((option) => option.value === targetValue) ? targetValue : modelDefaults[provider];
   elements.model.value = nextValue;
   elements.modelMobile.value = nextValue;
+  renderModelPickerCards(provider, options, nextValue);
   syncMessagePlaceholder();
   syncTopbarTitle();
+}
+
+function renderModelPickerCards(provider, options, activeModel) {
+  if (!elements.providerChipList || !elements.modelCardList) {
+    return;
+  }
+
+  const providerEntries = Object.entries(providerTitles).filter(([key]) => modelOptions[key]);
+  elements.providerChipList.innerHTML = providerEntries
+    .map(
+      ([value, label]) => `
+        <button
+          type="button"
+          class="provider-chip ${value === provider ? "active" : ""}"
+          data-provider-card="${value}"
+        >
+          ${escapeHtml(label)}
+        </button>
+      `,
+    )
+    .join("");
+
+  elements.modelCardList.innerHTML = options
+    .map(
+      (option) => `
+        <button
+          type="button"
+          class="model-card ${option.value === activeModel ? "active" : ""}"
+          data-model-card="${option.value}"
+        >
+          <span>${escapeHtml(option.label)}</span>
+          <strong>${option.value === activeModel ? "当前使用" : "点击切换"}</strong>
+        </button>
+      `,
+    )
+    .join("");
+
+  document.querySelectorAll("[data-provider-card]").forEach((button) => {
+    button.addEventListener("click", () => {
+      elements.provider.value = button.dataset.providerCard;
+      elements.providerMobile.value = button.dataset.providerCard;
+      syncModelOptions();
+      persistPreferences();
+    });
+  });
+
+  document.querySelectorAll("[data-model-card]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const model = button.dataset.modelCard;
+      elements.model.value = model;
+      elements.modelMobile.value = model;
+      renderModelPickerCards(elements.provider.value, modelOptions[elements.provider.value] || [], model);
+      persistPreferences();
+      syncMessagePlaceholder();
+      closeAllSheets();
+    });
+  });
 }
 
 function showAuthOverlay() {
@@ -396,6 +456,10 @@ function renderSessions() {
       event.stopPropagation();
       const sessionId = button.dataset.deleteSession;
       if (!sessionId) {
+        return;
+      }
+
+      if (!window.confirm("确认删除这个会话吗？删除后无法恢复。")) {
         return;
       }
 

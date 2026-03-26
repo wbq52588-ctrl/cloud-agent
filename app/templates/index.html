@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260326o" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260326p" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -202,9 +202,9 @@
     <div id="model-sheet" class="bottom-sheet hidden" aria-hidden="true">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <h3>模型设置</h3>
+        <h3>模型模式</h3>
       </div>
-      <div class="sheet-form">
+      <div class="sheet-form hidden">
         <label>
           模型提供方
           <select id="provider-mobile"></select>
@@ -214,6 +214,8 @@
           <select id="model-mobile"></select>
         </label>
       </div>
+      <div id="provider-chip-list" class="provider-chip-list"></div>
+      <div id="model-card-list" class="model-card-list"></div>
     </div>
 
     <div id="advanced-sheet" class="bottom-sheet hidden" aria-hidden="true">
@@ -237,6 +239,6 @@
       accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
     />
 
-    <script src="/static/app.js?v=20260326o"></script>
+    <script src="/static/app.js?v=20260326p"></script>
   </body>
 </html>

@@ -307,6 +307,13 @@ textarea {
   color: var(--muted);
 }
 
+.empty-kicker {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .message-row {
   display: flex;
   width: 100%;
@@ -538,16 +545,24 @@ textarea {
 @media (max-width: 960px) {
   body {
     overflow: hidden;
+    background: #17191d;
+    color: #f5f7fb;
   }
 
   body.drawer-open {
     overflow: hidden;
   }
 
+  .mobile-sidebar-backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
     height: 100vh;
     min-height: 100vh;
+    background: #17191d;
   }
 
   .sidebar {
@@ -557,7 +572,7 @@ textarea {
     bottom: 0;
     width: min(84vw, 340px);
     max-width: 340px;
-    border-right: 1px solid var(--line);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
     border-bottom: none;
     opacity: 1;
     padding: 18px 16px 20px;
@@ -565,7 +580,9 @@ textarea {
     transition: transform 180ms ease;
     z-index: 30;
     overflow-y: auto;
-    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+    background: #202225;
+    backdrop-filter: none;
   }
 
   .sidebar.mobile-open {
@@ -574,17 +591,24 @@ textarea {
 
   .brand {
     padding: 16px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
 
   .brand h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     line-height: 1.1;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    color: #f8fafc;
   }
 
   .sidebar-section {
     margin-top: 14px;
     padding: 14px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
 
   .session-list {
@@ -592,18 +616,32 @@ textarea {
   }
 
   .session-item {
-    padding: 10px 12px;
-    border-radius: 14px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    border: none;
+    background: transparent;
   }
 
   .session-item strong {
     font-size: 14px;
     line-height: 1.35;
+    color: #e7edf8;
   }
 
   .session-item span {
     font-size: 11px;
     margin-top: 4px;
+    color: #9ca3af;
+  }
+
+  .session-item.active {
+    background: #223e7f;
+    border: none;
+  }
+
+  .session-item.active strong,
+  .session-item.active span {
+    color: #f8fafc;
   }
 
   .chat-panel {
@@ -612,14 +650,19 @@ textarea {
     max-height: 100vh;
     min-height: 0;
     overflow: hidden;
-    padding: 10px;
-    gap: 10px;
+    padding: 0;
+    gap: 0;
+    background: #17191d;
   }
 
   .chat-header {
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 8px;
+    padding: 14px 14px 10px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: linear-gradient(180deg, rgba(23, 25, 29, 0.98), rgba(23, 25, 29, 0.92));
   }
 
   .mobile-actions {
@@ -630,21 +673,49 @@ textarea {
   .sidebar-section,
   .chat-header,
   .composer {
-    border-radius: 18px;
+    border-radius: 0;
   }
 
   .chat-header h2 {
-    font-size: 1.8rem;
-    margin-bottom: 4px;
+    font-size: 1.05rem;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #f8fafc;
   }
 
   .chat-header .header-note {
     display: none;
   }
 
+  .chat-header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .chat-header-main > div:last-child {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .eyebrow,
+  .section-title,
+  .status-text {
+    color: #8f98a3;
+  }
+
+  .mobile-actions .ghost-button,
+  #sidebar-toggle {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #f5f7fb;
+  }
+
   .controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    display: none;
   }
 
   .tool-row {
@@ -655,11 +726,14 @@ textarea {
   .tools-disclosure {
     order: 3;
     border-radius: 14px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: #22252a;
   }
 
   .tools-summary {
     padding: 9px 10px;
     font-size: 12px;
+    color: #c5ccd6;
   }
 
   .tools-disclosure .tool-row {
@@ -674,15 +748,20 @@ textarea {
 
   .quick-actions {
     overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 2px;
-    gap: 8px;
+    flex-wrap: wrap;
+    padding: 0 14px 8px;
+    gap: 12px;
+    background: #17191d;
   }
 
   .quick-chip {
     white-space: nowrap;
-    padding: 7px 11px;
-    font-size: 13px;
+    padding: 14px 18px;
+    font-size: 17px;
+    border: none;
+    border-radius: 999px;
+    background: #1f2126;
+    color: #d6dbe4;
   }
 
   .action-row {
@@ -707,24 +786,69 @@ textarea {
   .message {
     width: 100%;
     max-width: 100%;
-    padding: 12px 13px;
-    border-radius: 16px;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
   }
 
   .transcript-shell {
     min-height: 0;
     overflow: hidden;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
 
   .message-list {
     min-height: 0;
-    padding: 12px 10px 14px;
-    gap: 12px;
+    padding: 10px 14px 138px;
+    gap: 18px;
+    background: transparent;
+  }
+
+  .message-list.is-empty {
+    justify-content: flex-start;
+    padding-top: 100px;
+  }
+
+  .message-list.is-empty .empty-state {
+    place-items: start;
+    justify-items: start;
+    text-align: left;
+    min-height: 0;
+    color: #eef2f7;
+    padding: 0 2px;
+  }
+
+  .message-list.is-empty .empty-kicker {
+    font-size: 18px;
+    color: #a6adb7;
+    margin-bottom: 2px;
+  }
+
+  .message-list.is-empty .empty-state h3 {
+    margin: 0 0 18px;
+    font-size: clamp(2.35rem, 8vw, 3.6rem);
+    line-height: 1.06;
+    letter-spacing: -0.04em;
+    color: #f8fafc;
+  }
+
+  .message-list.is-empty .empty-state p {
+    display: none;
   }
 
   .composer {
     gap: 8px;
-    padding: 10px 12px 12px;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+    position: sticky;
+    bottom: 0;
+    z-index: 12;
+    border: none;
+    box-shadow: none;
+    background: linear-gradient(180deg, rgba(23, 25, 29, 0.1), rgba(23, 25, 29, 0.94) 18%, rgba(23, 25, 29, 0.98));
   }
 
   .composer-top {
@@ -737,8 +861,7 @@ textarea {
 
   .composer .compact-label > span,
   .message-box > span {
-    font-size: 12px;
-    letter-spacing: 0.03em;
+    display: none;
   }
 
   .upload-box input[type="file"] {
@@ -748,27 +871,121 @@ textarea {
 
   .message-box textarea,
   .system-prompt textarea {
-    border-radius: 12px;
-    padding: 11px 12px;
+    border-radius: 18px;
+    padding: 13px 14px;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: #22252a;
+    color: #f8fafc;
   }
 
   .message-box textarea {
-    min-height: 52px;
+    min-height: 54px;
     max-height: 132px;
+  }
+
+  .message-box textarea::placeholder,
+  .system-prompt textarea::placeholder {
+    color: #9aa2ac;
   }
 
   .composer-actions {
     gap: 8px;
+    align-items: center;
+  }
+
+  .message-box {
+    background: #2a2d31;
+    border-radius: 28px;
+    padding: 0;
+  }
+
+  .message-box textarea {
+    background: transparent;
+    border: none;
+    padding: 16px 18px;
   }
 
   .action-row .ghost-button,
   .action-row .primary-button {
-    flex: 1 1 auto;
-    min-height: 44px;
+    flex: 0 0 auto;
+    min-height: 46px;
   }
 
   .action-row #logout-button {
-    flex-basis: 100%;
+    display: none;
+  }
+
+  .action-row #send-button {
+    min-width: 84px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #4f7df3, #315fd7);
+  }
+
+  .action-row #stop-button {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #d3d8e0;
+  }
+
+  .message.assistant {
+    max-width: 100%;
+  }
+
+  .message.assistant .message-toolbar {
+    justify-content: flex-start;
+    margin-bottom: 6px;
+  }
+
+  .message.assistant .message-content {
+    color: #eef2f7;
+  }
+
+  .message.user {
+    max-width: 88%;
+    padding: 12px 14px;
+    border-radius: 20px;
+    background: #2a2f36;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .message.user .message-role,
+  .message.user .message-copy-button {
+    display: none;
+  }
+
+  .message.user .message-content {
+    color: #f8fafc;
+  }
+
+  .message-copy-button {
+    color: #8f98a3;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: transparent;
+  }
+
+  .message-role {
+    color: #8f98a3;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+  }
+
+  .message-content {
+    font-size: 16px;
+    line-height: 1.72;
+    max-width: none;
+  }
+
+  .message-content p {
+    margin-bottom: 14px;
+  }
+
+  .message-content pre {
+    background: #22252a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .message-list.is-empty + .composer {
+    background: linear-gradient(180deg, rgba(23, 25, 29, 0), rgba(23, 25, 29, 0.96) 22%, rgba(23, 25, 29, 0.99));
   }
 }
 
@@ -786,16 +1003,16 @@ textarea {
   }
 
   .brand h1 {
-    font-size: 1.75rem;
+    font-size: 1.35rem;
   }
 
   .chat-header h2 {
-    font-size: 1.55rem;
+    font-size: 1rem;
   }
 
   .eyebrow,
   .section-title {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .ghost-button {
@@ -803,8 +1020,8 @@ textarea {
   }
 
   .message-content {
-    font-size: 13px;
-    line-height: 1.65;
+    font-size: 15px;
+    line-height: 1.68;
   }
 
   .tools-disclosure:not([open]) .tool-row {

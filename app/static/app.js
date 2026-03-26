@@ -102,6 +102,8 @@ const elements = {
   stopButton: document.getElementById("stop-button"),
   fileInput: document.getElementById("file-input"),
   attachmentList: document.getElementById("attachment-list"),
+  mobileInputShell: document.querySelector(".mobile-input-shell"),
+  mobileTextEntry: document.querySelector(".mobile-text-entry"),
   toolsDisclosure: document.getElementById("tools-disclosure"),
   desktopAttachmentTrigger: document.getElementById("desktop-attachment-trigger"),
   sessionSearch: document.getElementById("session-search"),
@@ -823,6 +825,15 @@ function bindEvents() {
       event.preventDefault();
       elements.chatForm.requestSubmit();
     }
+  });
+
+  [elements.mobileInputShell, elements.mobileTextEntry].forEach((element) => {
+    element?.addEventListener("click", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      elements.userMessage.focus();
+    });
   });
 
   elements.quickChips.forEach((chip) => {

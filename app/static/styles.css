@@ -213,6 +213,13 @@ p {
   gap: 10px;
 }
 
+.session-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .session-item {
   width: 100%;
   text-align: left;
@@ -223,7 +230,7 @@ p {
   cursor: pointer;
 }
 
-.session-item.active {
+.session-card.active .session-item {
   border-color: var(--accent);
   background: #eef8f6;
 }
@@ -237,6 +244,18 @@ p {
   margin-top: 6px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.session-delete-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(221, 209, 195, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #9aa3af;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .chat-panel {
@@ -562,6 +581,8 @@ textarea {
   height: 48px;
   border-radius: 999px;
   padding: 0 18px;
+  background: linear-gradient(135deg, #5b87ff, #3c63e6);
+  box-shadow: 0 10px 24px rgba(60, 99, 230, 0.28);
 }
 
 .mobile-toolbar-row {
@@ -703,13 +724,22 @@ textarea {
 
   .session-item {
     border: none;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.02);
     color: var(--dark-text);
-    padding: 12px 14px;
+    padding: 14px 14px;
+    border-radius: 18px;
   }
 
-  .session-item.active {
+  .session-card.active .session-item {
     background: #24458c;
+  }
+
+  .session-delete-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+    color: #c7d0db;
   }
 
   .chat-panel {
@@ -967,15 +997,16 @@ textarea {
   }
 
   .round-send-button {
-    width: 52px;
-    height: 52px;
+    width: 54px;
+    height: 54px;
     font-size: 0;
     position: relative;
+    border-radius: 18px;
   }
 
   .round-send-button::before {
-    content: "➤";
-    font-size: 18px;
+    content: "↑";
+    font-size: 24px;
     transform: translateX(1px);
   }
 

@@ -149,6 +149,18 @@ async def get_session(
     return session
 
 
+@app.delete("/v1/sessions/{session_id}")
+async def delete_session(
+    session_id: str,
+    x_access_password: str | None = Header(default=None),
+) -> dict[str, bool]:
+    require_access(x_access_password)
+    deleted = store.delete_session(session_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"deleted": True}
+
+
 @app.post("/v1/sessions/{session_id}/chat", response_model=SessionDetail)
 async def chat_session(
     session_id: str,

@@ -42,7 +42,7 @@ const modelDefaults = {
 };
 
 const providerTitles = {
-  gemini: "Gemini",
+  gemini: "Q",
   openai: "OpenAI",
   zhipu: "GLM",
   vps: "VPS",
@@ -149,7 +149,7 @@ function formatRelativeTime(iso) {
 }
 
 function providerLabel(provider) {
-  return providerTitles[provider] || "Gemini";
+  return providerTitles[provider] || "Q";
 }
 
 function setStatus(text) {
@@ -369,11 +369,14 @@ function renderSessions() {
   elements.sessionList.innerHTML = sessions
     .map(
       (session) => `
-        <button class="session-item ${session.session_id === state.activeSessionId ? "active" : ""}" data-session-id="${session.session_id}">
-          <strong>${escapeHtml(session.title)}</strong>
-          <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
-          <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
-        </button>
+        <article class="session-card ${session.session_id === state.activeSessionId ? "active" : ""}">
+          <button class="session-item" data-session-id="${session.session_id}">
+            <strong>${escapeHtml(session.title)}</strong>
+            <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
+            <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
+          </button>
+          <button class="session-delete-button" type="button" data-delete-session="${session.session_id}" aria-label="删除会话">×</button>
+        </article>
       `,
     )
     .join("");
@@ -385,6 +388,30 @@ function renderSessions() {
         state.sidebarCollapsed = true;
         applySidebarState();
       }
+    });
+  });
+
+  document.querySelectorAll("[data-delete-session]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const sessionId = button.dataset.deleteSession;
+      if (!sessionId) {
+        return;
+      }
+
+      await fetchJson(`/v1/sessions/${sessionId}`, { method: "DELETE" });
+
+      if (state.activeSessionId === sessionId) {
+        clearInvalidSessionState();
+      }
+
+      await refreshSessions();
+
+      if (!state.activeSessionId && state.sessions.length > 0) {
+        await loadSession(state.sessions[0].session_id);
+      }
+
+      setStatus("会话已删除");
     });
   });
 }

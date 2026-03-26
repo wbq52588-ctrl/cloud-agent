@@ -88,6 +88,14 @@ class SessionStore:
                 return None
             return SessionDetail.model_validate(session.model_dump())
 
+    def delete_session(self, session_id: str) -> bool:
+        with self._lock:
+            if session_id not in self._sessions:
+                return False
+            del self._sessions[session_id]
+            self._save()
+            return True
+
     def append_turn(
         self,
         session_id: str,

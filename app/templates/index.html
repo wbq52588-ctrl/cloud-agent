@@ -88,7 +88,9 @@
               <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
               <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">整理需求</button>
             </div>
-            <div class="tool-row">
+            <details id="tools-disclosure" class="tools-disclosure" open>
+              <summary class="tools-summary">高级选项</summary>
+              <div class="tool-row">
               <label class="upload-box compact-label">
                 <span>附件</span>
                 <input
@@ -102,7 +104,8 @@
                 <span>系统提示词</span>
                 <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>
               </label>
-            </div>
+              </div>
+            </details>
           </div>
           <div id="attachment-list" class="attachment-list"></div>
           <label class="message-box">
@@ -121,6 +124,6 @@
       </main>
     </div>
 
-    <script src="/static/app.js?v=20260326i"></script>
+    <script src="/static/app.js?v=20260326j"></script>
   </body>
 </html>

@@ -62,6 +62,7 @@ const elements = {
   logoutButton: document.getElementById("logout-button"),
   fileInput: document.getElementById("file-input"),
   attachmentList: document.getElementById("attachment-list"),
+  toolsDisclosure: document.getElementById("tools-disclosure"),
   sidebar: document.getElementById("sidebar"),
   sidebarToggle: document.getElementById("sidebar-toggle"),
   sidebarToggleMobile: document.getElementById("sidebar-toggle-mobile"),
@@ -140,6 +141,13 @@ function setStatus(text) {
 
 function isMobileViewport() {
   return window.innerWidth <= 960;
+}
+
+function syncResponsiveComposer() {
+  if (!elements.toolsDisclosure) {
+    return;
+  }
+  elements.toolsDisclosure.open = !isMobileViewport();
 }
 
 function syncComposerState() {
@@ -623,7 +631,10 @@ elements.mobileSidebarBackdrop.addEventListener("click", () => {
   applySidebarState();
 });
 
-window.addEventListener("resize", applySidebarState);
+window.addEventListener("resize", () => {
+  applySidebarState();
+  syncResponsiveComposer();
+});
 
 function updateSidebarButtons() {
   const collapsed = state.sidebarCollapsed;
@@ -706,6 +717,7 @@ async function bootstrap() {
   loadPreferences();
   syncModelOptions(elements.model.value);
   applySidebarState();
+  syncResponsiveComposer();
   syncComposerState();
   elements.userMessage.dispatchEvent(new Event("input"));
 

@@ -26,11 +26,7 @@ const modelOptions = {
     { value: "glm-4.5-air", label: "GLM-4.5 Air" },
   ],
   vps: [
-    { value: "vps-status", label: "服务状态" },
     { value: "vps-run", label: "立即运行任务" },
-    { value: "vps-logs", label: "查看日志" },
-    { value: "vps-timer", label: "定时计划" },
-    { value: "vps-branch", label: "仓库分支" },
   ],
 };
 
@@ -38,7 +34,7 @@ const modelDefaults = {
   gemini: "gemini-2.5-flash",
   openai: "gpt-4.1-mini",
   zhipu: "glm-4.7",
-  vps: "vps-status",
+  vps: "vps-run",
 };
 
 const providerTitles = {
@@ -63,11 +59,7 @@ const modelDescriptions = {
     "glm-4.5-air": { title: "轻快", detail: "速度优先，适合短对话" },
   },
   vps: {
-    "vps-status": { title: "检查", detail: "查看当前服务与运行状态" },
     "vps-run": { title: "执行", detail: "直接触发一次远程任务" },
-    "vps-logs": { title: "日志", detail: "快速查看运行日志" },
-    "vps-timer": { title: "计划", detail: "检查定时计划与任务安排" },
-    "vps-branch": { title: "仓库", detail: "查看当前代码分支和版本" },
   },
 };
 
@@ -420,6 +412,19 @@ function renderModelPickerCards(provider, options, activeModel) {
   });
 }
 
+function bindPromptButtons(root = document) {
+  root.querySelectorAll("[data-prompt]").forEach((button) => {
+    if (button.dataset.boundPrompt === "1") return;
+    button.dataset.boundPrompt = "1";
+    button.addEventListener("click", () => {
+      elements.userMessage.value = button.dataset.prompt || "";
+      elements.userMessage.dispatchEvent(new Event("input"));
+      elements.userMessage.focus();
+      closeAllSheets();
+    });
+  });
+}
+
 function showAuthOverlay() {
   elements.authOverlay.classList.remove("hidden");
   elements.accessPassword.value = state.accessPassword;
@@ -490,8 +495,15 @@ function renderMessages(messages, pending = null) {
         <span class="empty-kicker">你好</span>
         <h3>需要我为你做些什么？</h3>
         <p>你可以直接提问，也可以通过底部按钮打开模型、工具或附件菜单。</p>
+        <div class="welcome-actions">
+          <button type="button" class="welcome-action" data-prompt="查看当前服务与运行状态">查看服务与运行状态</button>
+          <button type="button" class="welcome-action" data-prompt="快速查看运行日志">快速查看运行日志</button>
+          <button type="button" class="welcome-action" data-prompt="检查定时计划与任务安排">检查定时计划与任务安排</button>
+          <button type="button" class="welcome-action" data-prompt="查看当前代码分支与版本">查看当前代码分支与版本</button>
+        </div>
       </div>
     `;
+    bindPromptButtons(elements.messageList);
     syncGreetingState();
     return;
   }
@@ -827,14 +839,7 @@ function bindEvents() {
     });
   });
 
-  elements.quickChips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      elements.userMessage.value = chip.dataset.prompt || "";
-      elements.userMessage.dispatchEvent(new Event("input"));
-      elements.userMessage.focus();
-      closeAllSheets();
-    });
-  });
+  bindPromptButtons();
 
   elements.desktopAttachmentTrigger?.addEventListener("click", () => {
     elements.fileInput.accept = "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh";

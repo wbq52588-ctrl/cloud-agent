@@ -326,6 +326,27 @@ textarea {
   color: var(--muted);
 }
 
+.welcome-actions {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 460px);
+  margin-top: 18px;
+}
+
+.welcome-action {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dark-text);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
 .empty-kicker {
   display: inline-block;
   margin-bottom: 10px;
@@ -892,6 +913,41 @@ textarea {
 
   .empty-state {
     display: none;
+  }
+
+  .message-list.is-empty .empty-state {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    min-height: calc(100dvh - 280px);
+    padding: 18px 8px 0;
+    text-align: left;
+  }
+
+  .message-list.is-empty .empty-state h3 {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    color: var(--dark-text);
+  }
+
+  .message-list.is-empty .empty-state p {
+    margin: 10px 0 0;
+    color: #98a1aa;
+    line-height: 1.55;
+  }
+
+  .message-list.is-empty .welcome-actions {
+    width: 100%;
+    margin-top: 18px;
+  }
+
+  .message-list.is-empty .welcome-action {
+    border-radius: 18px;
+    padding: 15px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #f3f4f6;
   }
 
   body:not(.has-conversation) .message-list {

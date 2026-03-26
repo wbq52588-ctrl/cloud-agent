@@ -76,6 +76,8 @@ const elements = {
   attachmentList: document.getElementById("attachment-list"),
   toolsDisclosure: document.getElementById("tools-disclosure"),
   desktopAttachmentTrigger: document.getElementById("desktop-attachment-trigger"),
+  sessionSearch: document.getElementById("session-search"),
+  mobileNewChatButton: document.getElementById("mobile-new-chat-button"),
   sidebar: document.getElementById("sidebar"),
   sidebarToggle: document.getElementById("sidebar-toggle"),
   sidebarToggleMobile: document.getElementById("sidebar-toggle-mobile"),
@@ -349,12 +351,22 @@ function authHeaders() {
 }
 
 function renderSessions() {
-  if (!state.sessions.length) {
+  const keyword = elements.sessionSearch?.value?.trim().toLowerCase() || "";
+  const sessions = keyword
+    ? state.sessions.filter((session) => {
+        const title = (session.title || "").toLowerCase();
+        const provider = (session.provider || "").toLowerCase();
+        const model = (session.model || "").toLowerCase();
+        return title.includes(keyword) || provider.includes(keyword) || model.includes(keyword);
+      })
+    : state.sessions;
+
+  if (!sessions.length) {
     elements.sessionList.innerHTML = '<p class="section-title">还没有会话</p>';
     return;
   }
 
-  elements.sessionList.innerHTML = state.sessions
+  elements.sessionList.innerHTML = sessions
     .map(
       (session) => `
         <button class="session-item ${session.session_id === state.activeSessionId ? "active" : ""}" data-session-id="${session.session_id}">
@@ -657,6 +669,10 @@ function bindEvents() {
     }
   });
 
+  elements.mobileNewChatButton?.addEventListener("click", () => {
+    elements.newChatButton.click();
+  });
+
   elements.authSubmit.addEventListener("click", verifyAccess);
   elements.stopButton.addEventListener("click", stopGeneration);
 
@@ -750,6 +766,8 @@ function bindEvents() {
   elements.fileInput.addEventListener("change", async (event) => {
     await handleFiles(Array.from(event.target.files || []));
   });
+
+  elements.sessionSearch?.addEventListener("input", renderSessions);
 
   elements.sidebarToggle.addEventListener("click", () => {
     state.sidebarCollapsed = !state.sidebarCollapsed;

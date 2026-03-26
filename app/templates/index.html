@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260326m" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260326n" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -36,6 +36,13 @@
             </div>
             <button id="sidebar-toggle" type="button" class="ghost-button">折叠</button>
           </div>
+          <div class="mobile-sidebar-search">
+            <input id="session-search" type="text" placeholder="搜索对话" />
+          </div>
+          <button id="mobile-new-chat-button" type="button" class="mobile-new-chat-button">
+            <span class="mobile-new-chat-icon">+</span>
+            <span>发起新对话</span>
+          </button>
           <button id="new-chat-button" class="primary-button">新建会话</button>
         </div>
         <div class="sidebar-section">
@@ -68,6 +75,12 @@
             <div class="mobile-hero">
               <p class="mobile-hero-kicker" id="mobile-greeting-subtitle">你好，欢迎回来</p>
               <h2 id="mobile-greeting-title">需要我为你做些什么？</h2>
+              <div class="hero-suggestions">
+                <button type="button" class="hero-chip quick-chip" data-prompt="帮我制作一张运维监控风格的图片">制作图片</button>
+                <button type="button" class="hero-chip quick-chip" data-prompt="帮我写一段适合产品发布会的背景音乐描述">创作音乐</button>
+                <button type="button" class="hero-chip quick-chip" data-prompt="随便给我一个值得继续追问的话题">随便写点什么</button>
+                <button type="button" class="hero-chip quick-chip" data-prompt="帮我把一个复杂技术概念拆成容易学的步骤">帮我学习</button>
+              </div>
             </div>
           </div>
 
@@ -93,7 +106,7 @@
             <div class="empty-state">
               <span class="empty-kicker">你好</span>
               <h3>需要我为你做些什么？</h3>
-              <p>你可以直接提问，也可以从底部工具按钮里打开常用能力。</p>
+              <p>你可以直接提问，也可以通过底部按钮打开模型、工具或附件菜单。</p>
             </div>
           </section>
         </section>
@@ -230,6 +243,6 @@
       accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
     />
 
-    <script src="/static/app.js?v=20260326m"></script>
+    <script src="/static/app.js?v=20260326n"></script>
   </body>
 </html>

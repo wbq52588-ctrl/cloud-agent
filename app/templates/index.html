@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260327j" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260327l" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -116,7 +116,6 @@
               <button type="button" class="quick-chip" data-prompt="分析一下这个报错并给我修复思路">分析报错</button>
               <button type="button" class="quick-chip" data-prompt="帮我把这段需求整理成开发任务列表">需求整理</button>
             </div>
-
             <details id="tools-disclosure" class="tools-disclosure" open>
               <summary class="tools-summary">高级选项</summary>
               <div class="tool-row">
@@ -170,10 +169,6 @@
         <button type="button" id="attachment-file-trigger" class="sheet-menu-item">
           <span>文件</span>
           <strong>上传文档或代码</strong>
-        </button>
-        <button type="button" id="attachment-image-trigger" class="sheet-menu-item">
-          <span>照片</span>
-          <strong>上传图片</strong>
         </button>
       </div>
     </div>
@@ -240,9 +235,9 @@
       class="hidden"
       type="file"
       multiple
-      accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
+      accept=".txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
     />
 
-    <script src="/static/app.js?v=20260327j"></script>
+    <script src="/static/app.js?v=20260327l"></script>
   </body>
 </html>

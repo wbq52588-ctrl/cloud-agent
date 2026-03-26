@@ -214,13 +214,28 @@ p {
   border: 1px solid var(--line);
   background: var(--panel-strong);
   border-radius: 16px;
-  padding: 12px 14px;
-  cursor: pointer;
+  padding: 10px 10px 10px 14px;
+  cursor: default;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .session-item.active {
   border-color: var(--accent);
   background: #eef8f6;
+}
+
+.session-item-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
 }
 
 .session-item strong,
@@ -232,6 +247,85 @@ p {
   margin-top: 6px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.session-item-actions {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.session-menu-button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.session-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 112px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(255, 253, 250, 0.98);
+  border: 1px solid rgba(222, 210, 196, 0.9);
+  box-shadow: 0 16px 32px rgba(32, 23, 13, 0.16);
+  z-index: 20;
+}
+
+.session-menu-action {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.session-menu-action.danger {
+  color: #b42318;
+}
+
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.confirm-card {
+  width: min(100%, 360px);
+  border-radius: 22px;
+  background: rgba(255, 253, 250, 0.98);
+  border: 1px solid rgba(222, 210, 196, 0.9);
+  box-shadow: 0 24px 48px rgba(32, 23, 13, 0.2);
+  padding: 18px;
+}
+
+.confirm-card h3 {
+  margin-bottom: 8px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.danger-button {
+  background: linear-gradient(135deg, #d92d20, #b42318);
 }
 
 .chat-panel {
@@ -747,11 +841,32 @@ textarea {
     border: none;
     background: transparent;
     color: var(--dark-text);
-    padding: 12px 14px;
+    padding: 10px 10px 10px 14px;
   }
 
   .session-item.active {
     background: #24458c;
+  }
+
+  .session-menu-button {
+    background: rgba(255, 255, 255, 0.05);
+    color: #d6dbe2;
+  }
+
+  .session-menu {
+    background: #1d2025;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .session-menu-action {
+    color: #f3f4f6;
+  }
+
+  .confirm-card {
+    background: #1d2025;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.46);
   }
 
   .chat-panel {

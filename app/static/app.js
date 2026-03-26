@@ -9,6 +9,8 @@
   isGenerating: false,
   abortController: null,
   openSheet: null,
+  sessionMenuOpenId: null,
+  pendingDeleteSession: null,
 };
 
 const DOCUMENT_ACCEPT =
@@ -107,6 +109,7 @@ const elements = {
   sidebarToggleMobile: document.getElementById("sidebar-toggle-mobile"),
   mobileSidebarBackdrop: document.getElementById("mobile-sidebar-backdrop"),
   sheetBackdrop: document.getElementById("sheet-backdrop"),
+  dialogBackdrop: document.getElementById("dialog-backdrop"),
   attachmentSheet: document.getElementById("attachment-sheet"),
   toolsSheet: document.getElementById("tools-sheet"),
   modelSheet: document.getElementById("model-sheet"),
@@ -120,6 +123,11 @@ const elements = {
   mobileProviderTitle: document.getElementById("mobile-provider-title"),
   mobileGreetingTitle: document.getElementById("mobile-greeting-title"),
   mobileGreetingSubtitle: document.getElementById("mobile-greeting-subtitle"),
+  deleteDialog: document.getElementById("delete-dialog"),
+  deleteDialogTitle: document.getElementById("delete-dialog-title"),
+  deleteDialogCopy: document.getElementById("delete-dialog-copy"),
+  deleteCancelButton: document.getElementById("delete-cancel-button"),
+  deleteConfirmButton: document.getElementById("delete-confirm-button"),
 };
 
 function isMobileViewport() {
@@ -210,6 +218,32 @@ function closeAllSheets() {
     }
   });
   elements.sheetBackdrop.classList.add("hidden");
+}
+
+function closeSessionMenus() {
+  if (!state.sessionMenuOpenId) return;
+  state.sessionMenuOpenId = null;
+  renderSessions();
+}
+
+function openDeleteDialog(session) {
+  state.pendingDeleteSession = session;
+  if (elements.deleteDialogTitle) {
+    elements.deleteDialogTitle.textContent = `确认删除“${session.title}”？`;
+  }
+  if (elements.deleteDialogCopy) {
+    elements.deleteDialogCopy.textContent = "删除后无法恢复，相关消息记录会一并移除。";
+  }
+  elements.deleteDialog?.classList.remove("hidden");
+  elements.deleteDialog?.setAttribute("aria-hidden", "false");
+  elements.dialogBackdrop?.classList.remove("hidden");
+}
+
+function closeDeleteDialog() {
+  state.pendingDeleteSession = null;
+  elements.deleteDialog?.classList.add("hidden");
+  elements.deleteDialog?.setAttribute("aria-hidden", "true");
+  elements.dialogBackdrop?.classList.add("hidden");
 }
 
 function syncMobileControls() {
@@ -476,16 +510,24 @@ function renderSessions() {
   elements.sessionList.innerHTML = sessions
     .map(
       (session) => `
-        <button class="session-item ${session.session_id === state.activeSessionId ? "active" : ""}" data-session-id="${session.session_id}">
-          <strong>${escapeHtml(session.title)}</strong>
-          <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
-          <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
-        </button>
+        <div class="session-item ${session.session_id === state.activeSessionId ? "active" : ""}">
+          <button class="session-item-main" data-session-id="${session.session_id}">
+            <strong>${escapeHtml(session.title)}</strong>
+            <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
+            <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
+          </button>
+          <div class="session-item-actions">
+            <button type="button" class="session-menu-button" data-session-menu="${session.session_id}" aria-label="会话菜单">⋯</button>
+            <div class="session-menu ${state.sessionMenuOpenId === session.session_id ? "" : "hidden"}">
+              <button type="button" class="session-menu-action danger" data-delete-session="${session.session_id}">删除会话</button>
+            </div>
+          </div>
+        </div>
       `,
     )
     .join("");
 
-  document.querySelectorAll(".session-item").forEach((button) => {
+  document.querySelectorAll(".session-item-main").forEach((button) => {
     button.addEventListener("click", async () => {
       await loadSession(button.dataset.sessionId);
       if (isMobileViewport()) {
@@ -493,6 +535,25 @@ function renderSessions() {
         applySidebarState();
         syncViewportInsets();
       }
+    });
+  });
+
+  document.querySelectorAll("[data-session-menu]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const nextId = button.dataset.sessionMenu;
+      state.sessionMenuOpenId = state.sessionMenuOpenId === nextId ? null : nextId;
+      renderSessions();
+    });
+  });
+
+  document.querySelectorAll("[data-delete-session]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const session = state.sessions.find((item) => item.session_id === button.dataset.deleteSession);
+      if (!session) return;
+      closeSessionMenus();
+      openDeleteDialog(session);
     });
   });
 }
@@ -588,6 +649,24 @@ async function fetchJson(url, options = {}) {
 async function refreshSessions() {
   state.sessions = await fetchJson("/v1/sessions");
   renderSessions();
+}
+
+async function deleteSession(sessionId) {
+  await fetchJson(`/v1/sessions/${sessionId}`, {
+    method: "DELETE",
+  });
+
+  if (state.activeSessionId === sessionId) {
+    clearInvalidSessionState();
+  }
+
+  await refreshSessions();
+
+  if (!state.activeSessionId && state.sessions.length) {
+    await loadSession(state.sessions[0].session_id);
+  } else if (!state.sessions.length) {
+    renderMessages([]);
+  }
 }
 
 async function loadPublicConfig() {
@@ -870,6 +949,7 @@ function bindEvents() {
   elements.modelSheetToggle?.addEventListener("click", () => openSheet("model"));
   elements.advancedSheetToggle?.addEventListener("click", () => openSheet("advanced"));
   elements.sheetBackdrop?.addEventListener("click", closeAllSheets);
+  elements.dialogBackdrop?.addEventListener("click", closeDeleteDialog);
   [elements.messageList, elements.transcriptShell, elements.chatPanel].forEach((element) => {
     element?.addEventListener("click", (event) => {
       if (!state.openSheet) return;
@@ -879,6 +959,15 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-close-sheet]").forEach((button) => {
     button.addEventListener("click", closeAllSheets);
+  });
+
+  elements.deleteCancelButton?.addEventListener("click", closeDeleteDialog);
+  elements.deleteConfirmButton?.addEventListener("click", async () => {
+    if (!state.pendingDeleteSession) return;
+    const sessionId = state.pendingDeleteSession.session_id;
+    closeDeleteDialog();
+    await deleteSession(sessionId);
+    setStatus("会话已删除");
   });
 
   elements.attachmentFileTrigger?.addEventListener("click", () => {
@@ -906,6 +995,12 @@ function bindEvents() {
   elements.mobileSidebarBackdrop.addEventListener("click", () => {
     state.sidebarCollapsed = true;
     applySidebarState();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!state.sessionMenuOpenId) return;
+    if (event.target.closest(".session-item-actions")) return;
+    closeSessionMenus();
   });
 
   window.addEventListener("resize", () => {

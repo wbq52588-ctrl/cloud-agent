@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260327n" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260327p" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -25,6 +25,7 @@
 
     <div id="mobile-sidebar-backdrop" class="mobile-sidebar-backdrop hidden"></div>
     <div id="sheet-backdrop" class="sheet-backdrop hidden"></div>
+    <div id="dialog-backdrop" class="sheet-backdrop hidden"></div>
 
     <div class="app-shell">
       <aside id="sidebar" class="sidebar">
@@ -219,6 +220,18 @@
       accept=".txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
     />
 
-    <script src="/static/app.js?v=20260327n"></script>
+    <div id="delete-dialog" class="confirm-dialog hidden" aria-hidden="true">
+      <div class="confirm-card">
+        <p class="eyebrow">删除会话</p>
+        <h3 id="delete-dialog-title">确认删除这个会话？</h3>
+        <p id="delete-dialog-copy" class="header-note">删除后无法恢复。</p>
+        <div class="confirm-actions">
+          <button id="delete-cancel-button" type="button" class="ghost-button">取消</button>
+          <button id="delete-confirm-button" type="button" class="primary-button danger-button">确认删除</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js?v=20260327p"></script>
   </body>
 </html>

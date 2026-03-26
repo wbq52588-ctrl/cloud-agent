@@ -48,6 +48,29 @@ const providerTitles = {
   vps: "VPS",
 };
 
+const modelDescriptions = {
+  gemini: {
+    "gemini-2.5-flash": { title: "快速", detail: "更适合日常提问与快速回复" },
+    "gemini-2.5-pro": { title: "思考", detail: "更适合复杂任务与长上下文分析" },
+  },
+  openai: {
+    "gpt-4.1-mini": { title: "轻量", detail: "更快，适合大多数常规对话" },
+    "gpt-4.1": { title: "标准", detail: "更平衡，适合正式写作与推理" },
+    "gpt-5.4": { title: "高级", detail: "更强推理与复杂任务处理能力" },
+  },
+  zhipu: {
+    "glm-4.7": { title: "标准", detail: "适合通用问答与中文任务" },
+    "glm-4.5-air": { title: "轻快", detail: "速度优先，适合短对话" },
+  },
+  vps: {
+    "vps-status": { title: "检查", detail: "查看当前服务与运行状态" },
+    "vps-run": { title: "执行", detail: "直接触发一次远程任务" },
+    "vps-logs": { title: "日志", detail: "快速查看运行日志" },
+    "vps-timer": { title: "计划", detail: "检查定时计划与任务安排" },
+    "vps-branch": { title: "仓库", detail: "查看当前代码分支和版本" },
+  },
+};
+
 const elements = {
   sessionList: document.getElementById("session-list"),
   messageList: document.getElementById("message-list"),
@@ -364,8 +387,9 @@ function renderModelPickerCards(provider, options, activeModel) {
           class="model-card ${option.value === activeModel ? "active" : ""}"
           data-model-card="${option.value}"
         >
-          <span>${escapeHtml(option.label)}</span>
-          <strong>${option.value === activeModel ? "当前使用" : "点击切换"}</strong>
+          <span>${escapeHtml(modelDescriptions[provider]?.[option.value]?.title || option.label)}</span>
+          <strong>${escapeHtml(modelDescriptions[provider]?.[option.value]?.detail || option.label)}</strong>
+          <em>${option.value === activeModel ? "当前使用" : "点击切换"}</em>
         </button>
       `,
     )

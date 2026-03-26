@@ -11,6 +11,9 @@
   openSheet: null,
 };
 
+const DOCUMENT_ACCEPT =
+  ".txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh,text/plain,text/markdown,application/json,text/csv,text/html,text/css,application/xml,text/xml";
+
 const modelOptions = {
   gemini: [
     { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
@@ -114,7 +117,6 @@ const elements = {
   advancedSheetToggle: document.getElementById("advanced-sheet-toggle"),
   mobileToolbarRow: document.getElementById("mobile-toolbar-row"),
   attachmentFileTrigger: document.getElementById("attachment-file-trigger"),
-  attachmentImageTrigger: document.getElementById("attachment-image-trigger"),
   mobileProviderTitle: document.getElementById("mobile-provider-title"),
   mobileGreetingTitle: document.getElementById("mobile-greeting-title"),
   mobileGreetingSubtitle: document.getElementById("mobile-greeting-subtitle"),
@@ -858,7 +860,7 @@ function bindEvents() {
   bindPromptButtons();
 
   elements.desktopAttachmentTrigger?.addEventListener("click", () => {
-    elements.fileInput.accept = "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh";
+    elements.fileInput.accept = DOCUMENT_ACCEPT;
     elements.fileInput.click();
   });
 
@@ -879,13 +881,7 @@ function bindEvents() {
   });
 
   elements.attachmentFileTrigger?.addEventListener("click", () => {
-    elements.fileInput.accept = "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh";
-    elements.fileInput.click();
-    closeAllSheets();
-  });
-
-  elements.attachmentImageTrigger?.addEventListener("click", () => {
-    elements.fileInput.accept = "image/*";
+    elements.fileInput.accept = DOCUMENT_ACCEPT;
     elements.fileInput.click();
     closeAllSheets();
   });

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260326b" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260326c" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -43,13 +43,15 @@
 
       <main class="chat-panel">
         <header class="chat-header">
-          <div class="mobile-actions">
-            <button id="sidebar-toggle-mobile" type="button" class="ghost-button">会话栏</button>
-          </div>
-          <div>
-            <p class="eyebrow">Multi Model Agent</p>
-            <h2 id="chat-title">请选择或新建一个会话</h2>
-            <p class="header-note">支持 Gemini / OpenAI / GLM / VPS 控制切换，消息历史会自动保留。</p>
+          <div class="chat-header-main">
+            <div class="mobile-actions">
+              <button id="sidebar-toggle-mobile" type="button" class="ghost-button">会话栏</button>
+            </div>
+            <div>
+              <p class="eyebrow">Multi Model Agent</p>
+              <h2 id="chat-title">请选择或新建一个会话</h2>
+              <p class="header-note">支持 Gemini / OpenAI / GLM / VPS 控制切换，发送后会立即出现占位回复，你可以随时停止等待。</p>
+            </div>
           </div>
           <div class="controls">
             <label>
@@ -71,7 +73,7 @@
         <section id="message-list" class="message-list">
           <div class="empty-state">
             <h3>先创建一个会话</h3>
-            <p>这个版本已经支持多模型切换、上下文保留和网页聊天。</p>
+            <p>这个版本已经支持多模型切换、上下文保留、文件上传和网页聊天。</p>
           </div>
         </section>
 
@@ -101,11 +103,12 @@
           <div id="attachment-list" class="attachment-list"></div>
           <label class="message-box">
             <span>发送消息</span>
-            <textarea id="user-message" rows="4" placeholder="输入你的问题..." required></textarea>
+            <textarea id="user-message" rows="3" placeholder="输入你的问题..." required></textarea>
           </label>
           <div class="composer-actions">
             <span id="status-text" class="status-text">服务就绪，按 Ctrl/Cmd + Enter 可发送</span>
             <div class="action-row">
+              <button id="stop-button" type="button" class="ghost-button hidden">停止等待</button>
               <button id="logout-button" type="button" class="ghost-button">退出登录</button>
               <button id="send-button" type="submit" class="primary-button">发送</button>
             </div>
@@ -114,6 +117,6 @@
       </main>
     </div>
 
-    <script src="/static/app.js?v=20260326b"></script>
+    <script src="/static/app.js?v=20260326c"></script>
   </body>
 </html>

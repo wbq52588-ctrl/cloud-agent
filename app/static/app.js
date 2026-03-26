@@ -1,10 +1,14 @@
 const state = {
   sessions: [],
   activeSessionId: null,
+  activeMessages: [],
   accessPassword: "",
   requiresPassword: false,
   attachments: [],
   sidebarCollapsed: false,
+  isGenerating: false,
+  pendingUserMessage: "",
+  abortController: null,
 };
 
 const modelOptions = {
@@ -47,6 +51,7 @@ const elements = {
   userMessage: document.getElementById("user-message"),
   statusText: document.getElementById("status-text"),
   sendButton: document.getElementById("send-button"),
+  stopButton: document.getElementById("stop-button"),
   chatForm: document.getElementById("chat-form"),
   newChatButton: document.getElementById("new-chat-button"),
   quickChips: document.querySelectorAll(".quick-chip"),
@@ -132,16 +137,16 @@ function setStatus(text) {
   elements.statusText.textContent = text;
 }
 
+function syncComposerState() {
+  elements.sendButton.disabled = state.isGenerating;
+  elements.stopButton.classList.toggle("hidden", !state.isGenerating);
+  elements.userMessage.placeholder = state.isGenerating ? "模型正在处理中..." : "输入你的问题...";
+}
+
 function updateSidebarButtons() {
   const collapsed = state.sidebarCollapsed && window.innerWidth > 960;
-
-  if (elements.sidebarToggle) {
-    elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
-  }
-
-  if (elements.sidebarToggleMobile) {
-    elements.sidebarToggleMobile.textContent = collapsed ? "展开会话栏" : "收起会话栏";
-  }
+  elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
+  elements.sidebarToggleMobile.textContent = collapsed ? "展开会话栏" : "收起会话栏";
 }
 
 function applySidebarState() {
@@ -177,6 +182,7 @@ function renderAttachments() {
 
 function clearInvalidSessionState() {
   state.activeSessionId = null;
+  state.activeMessages = [];
   elements.chatTitle.textContent = "请选择或新建一个会话";
   renderSessions();
   renderMessages([]);
@@ -270,26 +276,35 @@ function renderSessions() {
   });
 }
 
-function renderMessages(messages) {
-  if (!messages.length) {
+function renderMessages(messages, pending = null) {
+  if (!messages.length && !pending) {
     elements.messageList.innerHTML = `
       <div class="empty-state">
         <h3>开始第一轮对话</h3>
-        <p>你可以在这里切换 OpenAI、Gemini 或 GLM，然后直接发送消息。</p>
+        <p>发出消息后会立即看到你的输入和助手占位卡片，不用再盯着页面干等。</p>
       </div>
     `;
     return;
   }
 
-  elements.messageList.innerHTML = messages
+  const items = [...messages];
+  if (pending) {
+    items.push({ role: "user", content: pending.userText });
+    items.push({ role: "assistant", content: pending.placeholder, pending: true });
+  }
+
+  elements.messageList.innerHTML = items
     .map(
       (message, index) => `
-        <article class="message ${message.role}">
+        <article class="message ${message.role} ${message.pending ? "pending" : ""}">
           <div class="message-toolbar">
-            <span class="message-role">${message.role === "user" ? "你" : "助手"}</span>
-            <button type="button" class="ghost-button" data-copy-index="${index}">复制</button>
+            <div class="message-meta">
+              <span class="message-role">${message.role === "user" ? "你" : "助手"}</span>
+              <span class="message-time">${message.pending ? "思考中" : formatRelativeTime(new Date().toISOString())}</span>
+            </div>
+            ${message.pending ? "" : `<button type="button" class="ghost-button" data-copy-index="${index}">复制</button>`}
           </div>
-          <div class="message-content">${formatContent(message.content)}</div>
+          <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
         </article>
       `,
     )
@@ -298,7 +313,7 @@ function renderMessages(messages) {
   document.querySelectorAll("[data-copy-index]").forEach((button) => {
     button.addEventListener("click", async () => {
       const index = Number(button.dataset.copyIndex);
-      await navigator.clipboard.writeText(messages[index].content);
+      await navigator.clipboard.writeText(items[index].content);
       setStatus("已复制消息内容");
     });
   });
@@ -311,7 +326,7 @@ async function fetchJson(url, options = {}) {
     ...(options.headers || {}),
     ...authHeaders(),
   };
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetch(url, { ...options, headers, signal: options.signal });
   if (!response.ok) {
     let detail = "Request failed";
     try {
@@ -346,9 +361,10 @@ async function createSession() {
     body: JSON.stringify({}),
   });
   state.activeSessionId = session.session_id;
+  state.activeMessages = session.messages;
   persistPreferences();
   await refreshSessions();
-  await loadSession(session.session_id);
+  return session;
 }
 
 async function loadSession(sessionId) {
@@ -366,6 +382,7 @@ async function loadSession(sessionId) {
   }
 
   state.activeSessionId = sessionId;
+  state.activeMessages = session.messages;
   elements.chatTitle.textContent = session.title;
   elements.provider.value = session.provider || "gemini";
   syncModelOptions(session.model || "");
@@ -375,21 +392,47 @@ async function loadSession(sessionId) {
   persistPreferences();
 }
 
-async function submitTurn(event) {
-  event.preventDefault();
-
-  if (!state.activeSessionId) {
-    await createSession();
-  }
-
-  const userMessage = elements.userMessage.value.trim();
-  if (!userMessage) {
+function stopGeneration() {
+  if (!state.isGenerating || !state.abortController) {
     return;
   }
 
-  elements.sendButton.disabled = true;
+  state.abortController.abort();
+  state.abortController = null;
+  state.isGenerating = false;
+  syncComposerState();
+  renderMessages(state.activeMessages);
+  setStatus("已停止等待当前回复");
+
+  if (state.pendingUserMessage) {
+    elements.userMessage.value = state.pendingUserMessage;
+    elements.userMessage.dispatchEvent(new Event("input"));
+  }
+}
+
+async function submitTurn(event) {
+  event.preventDefault();
+
+  const userMessage = elements.userMessage.value.trim();
+  if (!userMessage || state.isGenerating) {
+    return;
+  }
+
+  if (!state.activeSessionId) {
+    const session = await createSession();
+    elements.chatTitle.textContent = session.title;
+  }
+
+  state.pendingUserMessage = userMessage;
+  state.abortController = new AbortController();
+  state.isGenerating = true;
+  syncComposerState();
   persistPreferences();
-  setStatus("正在调用模型，失败时会自动重试一次...");
+  renderMessages(state.activeMessages, {
+    userText: userMessage,
+    placeholder: "正在思考并生成回复...",
+  });
+  setStatus("模型处理中，你可以随时点击“停止等待”");
 
   try {
     const session = await fetchJson(`/v1/sessions/${state.activeSessionId}/chat`, {
@@ -402,26 +445,35 @@ async function submitTurn(event) {
         user_message: userMessage,
         attachments: state.attachments,
       }),
+      signal: state.abortController.signal,
     });
 
+    state.activeMessages = session.messages;
+    state.attachments = [];
+    state.pendingUserMessage = "";
+    elements.fileInput.value = "";
     elements.userMessage.value = "";
     elements.userMessage.dispatchEvent(new Event("input"));
-    state.attachments = [];
-    elements.fileInput.value = "";
     renderAttachments();
     elements.chatTitle.textContent = session.title;
     renderMessages(session.messages);
     await refreshSessions();
-    setStatus("已完成");
+    setStatus("回复已完成");
   } catch (error) {
+    if (error.name === "AbortError") {
+      return;
+    }
     if (error.message.includes("Session not found")) {
       clearInvalidSessionState();
       setStatus("当前会话已失效，请重新创建一个新会话");
       return;
     }
+    renderMessages(state.activeMessages);
     setStatus(`失败: ${error.message}`);
   } finally {
-    elements.sendButton.disabled = false;
+    state.isGenerating = false;
+    state.abortController = null;
+    syncComposerState();
   }
 }
 
@@ -448,9 +500,16 @@ async function verifyAccess() {
 }
 
 elements.chatForm.addEventListener("submit", submitTurn);
-elements.newChatButton.addEventListener("click", createSession);
+elements.newChatButton.addEventListener("click", async () => {
+  const session = await createSession();
+  elements.chatTitle.textContent = session.title;
+  state.activeMessages = [];
+  renderMessages([]);
+});
 elements.authSubmit.addEventListener("click", verifyAccess);
+elements.stopButton.addEventListener("click", stopGeneration);
 elements.logoutButton.addEventListener("click", () => {
+  stopGeneration();
   state.accessPassword = "";
   localStorage.removeItem("cloud-agent-access-password");
   showAuthOverlay();
@@ -464,7 +523,7 @@ elements.model.addEventListener("change", persistPreferences);
 elements.systemPrompt.addEventListener("change", persistPreferences);
 elements.userMessage.addEventListener("input", () => {
   elements.userMessage.style.height = "auto";
-  elements.userMessage.style.height = `${Math.min(elements.userMessage.scrollHeight, 260)}px`;
+  elements.userMessage.style.height = `${Math.min(elements.userMessage.scrollHeight, 220)}px`;
 });
 elements.userMessage.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -550,6 +609,7 @@ async function bootstrap() {
   loadPreferences();
   syncModelOptions(elements.model.value);
   applySidebarState();
+  syncComposerState();
   elements.userMessage.dispatchEvent(new Event("input"));
 
   setStatus("正在加载...");

@@ -1093,11 +1093,18 @@ textarea {
     height: 52px;
     font-size: 0;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
   .round-send-button::before {
-    content: "➤";
-    font-size: 18px;
+    content: "";
+    width: 16px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    clip-path: polygon(0 50%, 100% 0, 72% 50%, 100% 100%);
     transform: translateX(1px);
   }
 

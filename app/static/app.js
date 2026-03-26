@@ -7,8 +7,8 @@ const state = {
   attachments: [],
   sidebarCollapsed: false,
   isGenerating: false,
-  pendingUserMessage: "",
   abortController: null,
+  openSheet: null,
 };
 
 const modelOptions = {
@@ -41,51 +41,75 @@ const modelDefaults = {
   vps: "vps-status",
 };
 
+const providerTitles = {
+  gemini: "Gemini",
+  openai: "OpenAI",
+  zhipu: "GLM",
+  vps: "VPS",
+};
+
 const elements = {
   sessionList: document.getElementById("session-list"),
   messageList: document.getElementById("message-list"),
   chatTitle: document.getElementById("chat-title"),
   provider: document.getElementById("provider"),
   model: document.getElementById("model"),
-  systemPrompt: document.getElementById("system-prompt"),
+  providerMobile: document.getElementById("provider-mobile"),
+  modelMobile: document.getElementById("model-mobile"),
+  systemPromptDesktop: document.getElementById("system-prompt"),
+  systemPromptMobile: document.getElementById("system-prompt-mobile"),
   userMessage: document.getElementById("user-message"),
-  statusText: document.getElementById("status-text"),
-  sendButton: document.getElementById("send-button"),
-  stopButton: document.getElementById("stop-button"),
+  statusTextDesktop: document.getElementById("status-text"),
+  statusTextMobile: document.getElementById("status-text-mobile"),
   chatForm: document.getElementById("chat-form"),
   newChatButton: document.getElementById("new-chat-button"),
   quickChips: document.querySelectorAll(".quick-chip"),
-  quickActionsPanel: document.getElementById("quick-actions-panel"),
-  quickActionsToggle: document.getElementById("quick-actions-toggle"),
   authOverlay: document.getElementById("auth-overlay"),
   accessPassword: document.getElementById("access-password"),
   authSubmit: document.getElementById("auth-submit"),
   authStatus: document.getElementById("auth-status"),
   logoutButton: document.getElementById("logout-button"),
+  logoutButtonMobile: document.getElementById("logout-button-mobile"),
+  sendButton: document.getElementById("send-button"),
+  stopButton: document.getElementById("stop-button"),
   fileInput: document.getElementById("file-input"),
   attachmentList: document.getElementById("attachment-list"),
   toolsDisclosure: document.getElementById("tools-disclosure"),
+  desktopAttachmentTrigger: document.getElementById("desktop-attachment-trigger"),
   sidebar: document.getElementById("sidebar"),
   sidebarToggle: document.getElementById("sidebar-toggle"),
   sidebarToggleMobile: document.getElementById("sidebar-toggle-mobile"),
   mobileSidebarBackdrop: document.getElementById("mobile-sidebar-backdrop"),
+  sheetBackdrop: document.getElementById("sheet-backdrop"),
+  attachmentSheet: document.getElementById("attachment-sheet"),
+  toolsSheet: document.getElementById("tools-sheet"),
+  modelSheet: document.getElementById("model-sheet"),
+  advancedSheet: document.getElementById("advanced-sheet"),
+  attachmentMenuToggle: document.getElementById("attachment-menu-toggle"),
+  toolsMenuToggle: document.getElementById("tools-menu-toggle"),
+  modelSheetToggle: document.getElementById("model-sheet-toggle"),
+  advancedSheetToggle: document.getElementById("advanced-sheet-toggle"),
+  attachmentFileTrigger: document.getElementById("attachment-file-trigger"),
+  attachmentImageTrigger: document.getElementById("attachment-image-trigger"),
+  mobileProviderTitle: document.getElementById("mobile-provider-title"),
+  mobileGreetingTitle: document.getElementById("mobile-greeting-title"),
+  mobileGreetingSubtitle: document.getElementById("mobile-greeting-subtitle"),
 };
 
+function isMobileViewport() {
+  return window.innerWidth <= 960;
+}
+
 function escapeHtml(text) {
-  return text
+  return String(text)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
 
-function escapeCodePreservingNewlines(text) {
-  return escapeHtml(text).replaceAll("\n", "<br>");
-}
-
 function formatContent(text) {
   const escaped = escapeHtml(text);
   const blocks = escaped.split("```");
-
   return blocks
     .map((block, index) => {
       if (index % 2 === 1) {
@@ -96,9 +120,7 @@ function formatContent(text) {
         .split(/\n{2,}/)
         .map((paragraph) => {
           const withInlineCode = paragraph.replace(/`([^`]+)`/g, "<code>$1</code>");
-          return `<p>${escapeCodePreservingNewlines(withInlineCode)}</p>`
-            .replace(/&lt;code&gt;/g, "<code>")
-            .replace(/&lt;\/code&gt;/g, "</code>");
+          return `<p>${withInlineCode.replaceAll("\n", "<br>")}</p>`;
         })
         .join("");
     })
@@ -106,28 +128,15 @@ function formatContent(text) {
 }
 
 function formatRelativeTime(iso) {
-  if (!iso) {
-    return "刚刚";
-  }
-
+  if (!iso) return "刚刚";
   const timestamp = new Date(iso).getTime();
-  if (Number.isNaN(timestamp)) {
-    return iso;
-  }
+  if (Number.isNaN(timestamp)) return "刚刚";
 
   const diffSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (diffSeconds < 60) {
-    return "刚刚";
-  }
-  if (diffSeconds < 3600) {
-    return `${Math.floor(diffSeconds / 60)} 分钟前`;
-  }
-  if (diffSeconds < 86400) {
-    return `${Math.floor(diffSeconds / 3600)} 小时前`;
-  }
-  if (diffSeconds < 86400 * 7) {
-    return `${Math.floor(diffSeconds / 86400)} 天前`;
-  }
+  if (diffSeconds < 60) return "刚刚";
+  if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} 分钟前`;
+  if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} 小时前`;
+  if (diffSeconds < 86400 * 7) return `${Math.floor(diffSeconds / 86400)} 天前`;
 
   return new Intl.DateTimeFormat("zh-CN", {
     month: "numeric",
@@ -137,48 +146,108 @@ function formatRelativeTime(iso) {
   }).format(new Date(timestamp));
 }
 
+function providerLabel(provider) {
+  return providerTitles[provider] || "Gemini";
+}
+
 function setStatus(text) {
-  elements.statusText.textContent = text;
+  if (elements.statusTextDesktop) elements.statusTextDesktop.textContent = text;
+  if (elements.statusTextMobile) elements.statusTextMobile.textContent = text;
 }
 
-function isMobileViewport() {
-  return window.innerWidth <= 960;
+function syncMessagePlaceholder() {
+  const currentProvider = elements.provider.value;
+  elements.userMessage.placeholder = `问问 ${providerLabel(currentProvider)}`;
 }
 
-function syncResponsiveComposer() {
-  if (!elements.toolsDisclosure) {
+function syncTopbarTitle() {
+  elements.mobileProviderTitle.textContent = providerLabel(elements.provider.value);
+}
+
+function syncGreetingState() {
+  const hasMessages = state.activeMessages.length > 0;
+  elements.mobileGreetingTitle.textContent = hasMessages ? elements.chatTitle.textContent : "需要我为你做些什么？";
+  elements.mobileGreetingSubtitle.textContent = hasMessages
+    ? `${providerLabel(elements.provider.value)} 已准备好`
+    : "你好，欢迎回来";
+  document.body.classList.toggle("has-conversation", hasMessages);
+}
+
+function closeAllSheets() {
+  state.openSheet = null;
+  [elements.attachmentSheet, elements.toolsSheet, elements.modelSheet, elements.advancedSheet].forEach((sheet) => {
+    if (sheet) {
+      sheet.classList.add("hidden");
+      sheet.classList.remove("sheet-open");
+      sheet.setAttribute("aria-hidden", "true");
+    }
+  });
+  elements.sheetBackdrop.classList.add("hidden");
+}
+
+function openSheet(name) {
+  const map = {
+    attachment: elements.attachmentSheet,
+    tools: elements.toolsSheet,
+    model: elements.modelSheet,
+    advanced: elements.advancedSheet,
+  };
+  const nextSheet = map[name];
+  if (!nextSheet || !isMobileViewport()) return;
+
+  if (state.openSheet === name) {
+    closeAllSheets();
     return;
   }
-  elements.toolsDisclosure.open = !isMobileViewport();
-  if (elements.quickActionsPanel && !isMobileViewport()) {
-    elements.quickActionsPanel.classList.remove("panel-open");
+
+  closeAllSheets();
+  state.openSheet = name;
+  nextSheet.classList.remove("hidden");
+  requestAnimationFrame(() => nextSheet.classList.add("sheet-open"));
+  nextSheet.setAttribute("aria-hidden", "false");
+  elements.sheetBackdrop.classList.remove("hidden");
+}
+
+function syncResponsiveState() {
+  if (!isMobileViewport()) {
+    closeAllSheets();
+  }
+  if (elements.toolsDisclosure) {
+    elements.toolsDisclosure.open = !isMobileViewport();
   }
 }
 
-function toggleQuickActionsPanel(forceOpen = null) {
-  if (!elements.quickActionsPanel) {
-    return;
+function syncSidebarButtons() {
+  const collapsed = state.sidebarCollapsed;
+  if (elements.sidebarToggle) {
+    elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
   }
-  const nextState = forceOpen ?? !elements.quickActionsPanel.classList.contains("panel-open");
-  elements.quickActionsPanel.classList.toggle("panel-open", nextState);
-}
-
-function syncComposerState() {
-  elements.sendButton.disabled = state.isGenerating;
-  elements.stopButton.classList.toggle("hidden", !state.isGenerating);
-  elements.userMessage.placeholder = state.isGenerating ? "模型正在处理中..." : "输入你的问题...";
-}
-
-function updateSidebarButtons() {
-  const collapsed = state.sidebarCollapsed && window.innerWidth > 960;
-  elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
-  elements.sidebarToggleMobile.textContent = collapsed ? "展开会话栏" : "收起会话栏";
 }
 
 function applySidebarState() {
-  elements.sidebar.classList.toggle("collapsed", state.sidebarCollapsed && window.innerWidth > 960);
+  const mobile = isMobileViewport();
+  if (elements.sidebar) {
+    elements.sidebar.classList.toggle("collapsed", state.sidebarCollapsed && !mobile);
+    elements.sidebar.classList.toggle("mobile-open", mobile && !state.sidebarCollapsed);
+  }
+  elements.mobileSidebarBackdrop.classList.toggle("hidden", !mobile || state.sidebarCollapsed);
+  document.body.classList.toggle("drawer-open", mobile && !state.sidebarCollapsed);
   localStorage.setItem("cloud-agent-sidebar-collapsed", state.sidebarCollapsed ? "1" : "0");
-  updateSidebarButtons();
+  syncSidebarButtons();
+}
+
+function syncSystemPromptFields(source = "desktop") {
+  if (source === "desktop") {
+    elements.systemPromptMobile.value = elements.systemPromptDesktop.value;
+  } else {
+    elements.systemPromptDesktop.value = elements.systemPromptMobile.value;
+  }
+}
+
+function syncComposerState() {
+  const generating = state.isGenerating;
+  elements.sendButton.disabled = generating;
+  elements.stopButton.classList.toggle("hidden", !generating);
 }
 
 function renderAttachments() {
@@ -206,35 +275,13 @@ function renderAttachments() {
   });
 }
 
-function clearInvalidSessionState() {
-  state.activeSessionId = null;
-  state.activeMessages = [];
-  elements.chatTitle.textContent = "请选择或新建一个会话";
-  renderSessions();
-  renderMessages([]);
-  persistPreferences();
-}
-
-function syncModelOptions(preferredModel) {
-  const provider = elements.provider.value;
-  const options = modelOptions[provider] || [];
-  const fallbackModel = preferredModel || modelDefaults[provider] || "";
-
-  elements.model.innerHTML = options
-    .map((option) => `<option value="${option.value}">${option.label}</option>`)
-    .join("");
-
-  const hasPreferredModel = options.some((option) => option.value === fallbackModel);
-  elements.model.value = hasPreferredModel ? fallbackModel : modelDefaults[provider];
-}
-
 function persistPreferences() {
   localStorage.setItem(
     "cloud-agent-preferences",
     JSON.stringify({
       provider: elements.provider.value,
       model: elements.model.value,
-      systemPrompt: elements.systemPrompt.value,
+      systemPrompt: elements.systemPromptDesktop.value,
       activeSessionId: state.activeSessionId,
     }),
   );
@@ -250,8 +297,10 @@ function loadPreferences() {
     try {
       const data = JSON.parse(raw);
       elements.provider.value = data.provider || "gemini";
+      elements.providerMobile.value = elements.provider.value;
       syncModelOptions(data.model || "");
-      elements.systemPrompt.value = data.systemPrompt || "";
+      elements.systemPromptDesktop.value = data.systemPrompt || "";
+      elements.systemPromptMobile.value = data.systemPrompt || "";
       state.activeSessionId = data.activeSessionId || null;
     } catch {
       localStorage.removeItem("cloud-agent-preferences");
@@ -265,12 +314,21 @@ function loadPreferences() {
   }
 }
 
-function setAuthStatus(text) {
-  elements.authStatus.textContent = text;
-}
+function syncModelOptions(preferredModel) {
+  const provider = elements.provider.value;
+  const options = modelOptions[provider] || [];
+  const targetValue = preferredModel || modelDefaults[provider];
 
-function authHeaders() {
-  return state.accessPassword ? { "x-access-password": state.accessPassword } : {};
+  const optionHtml = options.map((option) => `<option value="${option.value}">${option.label}</option>`).join("");
+  elements.model.innerHTML = optionHtml;
+  elements.modelMobile.innerHTML = optionHtml;
+  elements.providerMobile.value = provider;
+
+  const nextValue = options.some((option) => option.value === targetValue) ? targetValue : modelDefaults[provider];
+  elements.model.value = nextValue;
+  elements.modelMobile.value = nextValue;
+  syncMessagePlaceholder();
+  syncTopbarTitle();
 }
 
 function showAuthOverlay() {
@@ -282,8 +340,16 @@ function hideAuthOverlay() {
   elements.authOverlay.classList.add("hidden");
 }
 
+function setAuthStatus(text) {
+  elements.authStatus.textContent = text;
+}
+
+function authHeaders() {
+  return state.accessPassword ? { "x-access-password": state.accessPassword } : {};
+}
+
 function renderSessions() {
-  if (state.sessions.length === 0) {
+  if (!state.sessions.length) {
     elements.sessionList.innerHTML = '<p class="section-title">还没有会话</p>';
     return;
   }
@@ -312,135 +378,40 @@ function renderSessions() {
 }
 
 function renderMessages(messages, pending = null) {
-  if (!messages.length && !pending) {
-    elements.messageList.innerHTML = `
-      <div class="empty-state">
-        <h3>开始第一轮对话</h3>
-        <p>发出消息后会先显示你的消息和助手占位卡片，不用再盯着页面干等。</p>
-      </div>
-    `;
-    return;
-  }
-
   const items = [...messages];
   if (pending) {
     items.push({ role: "user", content: pending.userText });
     items.push({ role: "assistant", content: pending.placeholder, pending: true });
   }
 
-  elements.messageList.innerHTML = items
-    .map((message, index) => {
-      const badge = message.role === "user" ? "你" : "AI";
-      const title = message.role === "user" ? "你的消息" : message.pending ? "正在思考" : "助手回复";
-      return `
-        <article class="message-row ${message.role}">
-          <div class="message-badge">${badge}</div>
-          <article class="message ${message.role} ${message.pending ? "pending" : ""}">
-            <div class="message-toolbar">
-              <div class="message-meta">
-                <span class="message-role">${title}</span>
-                <span class="message-time">${message.pending ? "处理中" : `第 ${index + 1} 条`}</span>
-              </div>
-              ${message.pending ? "" : `<button type="button" class="ghost-button" data-copy-index="${index}">复制</button>`}
-            </div>
-            <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
-          </article>
-        </article>
-      `;
-    })
-    .join("");
-
-  document.querySelectorAll("[data-copy-index]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const index = Number(button.dataset.copyIndex);
-      await navigator.clipboard.writeText(items[index].content);
-      setStatus("已复制消息内容");
-    });
-  });
-
-  elements.messageList.scrollTop = elements.messageList.scrollHeight;
-}
-
-function renderMessages(messages, pending = null) {
-  if (!messages.length && !pending) {
-    elements.messageList.innerHTML = `
-      <div class="empty-state">
-        <h3>开始第一轮对话</h3>
-        <p>发出消息后会先显示你的消息和助手占位卡片，不用再盯着页面干等。</p>
-      </div>
-    `;
-    return;
-  }
-
-  const items = [...messages];
-  if (pending) {
-    items.push({ role: "user", content: pending.userText });
-    items.push({ role: "assistant", content: pending.placeholder, pending: true });
-  }
-
-  elements.messageList.innerHTML = items
-    .map((message, index) => {
-      const title = message.role === "user" ? "你" : message.pending ? "思考中" : "助手";
-      return `
-        <article class="message-row ${message.role}">
-          <article class="message ${message.role} ${message.pending ? "pending" : ""}">
-            <div class="message-toolbar">
-              <span class="message-role">${title}</span>
-              ${message.pending ? "" : `<button type="button" class="ghost-button message-copy-button" data-copy-index="${index}">复制</button>`}
-            </div>
-            <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
-          </article>
-        </article>
-      `;
-    })
-    .join("");
-
-  document.querySelectorAll("[data-copy-index]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const index = Number(button.dataset.copyIndex);
-      await navigator.clipboard.writeText(items[index].content);
-      setStatus("已复制消息内容");
-    });
-  });
-
-  elements.messageList.scrollTop = elements.messageList.scrollHeight;
-}
-
-function renderMessages(messages, pending = null) {
-  if (!messages.length && !pending) {
+  if (!items.length) {
     elements.messageList.classList.add("is-empty");
     elements.messageList.innerHTML = `
       <div class="empty-state">
         <span class="empty-kicker">你好</span>
         <h3>需要我为你做些什么？</h3>
-        <p>选择一个快捷入口，或者直接从底部输入栏开始提问。</p>
+        <p>你可以直接提问，也可以通过底部按钮打开模型、工具或附件菜单。</p>
       </div>
     `;
+    syncGreetingState();
     return;
   }
 
   elements.messageList.classList.remove("is-empty");
-  const items = [...messages];
-  if (pending) {
-    items.push({ role: "user", content: pending.userText });
-    items.push({ role: "assistant", content: pending.placeholder, pending: true });
-  }
-
   elements.messageList.innerHTML = items
-    .map((message, index) => {
-      const title = message.role === "user" ? "你" : message.pending ? "思考中" : "助手";
-      return `
+    .map(
+      (message, index) => `
         <article class="message-row ${message.role}">
           <article class="message ${message.role} ${message.pending ? "pending" : ""}">
             <div class="message-toolbar">
-              <span class="message-role">${title}</span>
+              <span class="message-role">${message.role === "user" ? "你" : message.pending ? "思考中" : "助手"}</span>
               ${message.pending ? "" : `<button type="button" class="ghost-button message-copy-button" data-copy-index="${index}">复制</button>`}
             </div>
             <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
           </article>
         </article>
-      `;
-    })
+      `,
+    )
     .join("");
 
   document.querySelectorAll("[data-copy-index]").forEach((button) => {
@@ -452,6 +423,16 @@ function renderMessages(messages, pending = null) {
   });
 
   elements.messageList.scrollTop = elements.messageList.scrollHeight;
+  syncGreetingState();
+}
+
+function clearInvalidSessionState() {
+  state.activeSessionId = null;
+  state.activeMessages = [];
+  elements.chatTitle.textContent = "请选择或新建一个会话";
+  renderSessions();
+  renderMessages([]);
+  persistPreferences();
 }
 
 async function fetchJson(url, options = {}) {
@@ -459,6 +440,7 @@ async function fetchJson(url, options = {}) {
     ...(options.headers || {}),
     ...authHeaders(),
   };
+
   const response = await fetch(url, { ...options, headers, signal: options.signal });
   if (!response.ok) {
     let detail = "Request failed";
@@ -468,7 +450,6 @@ async function fetchJson(url, options = {}) {
     } catch {
       detail = response.statusText || detail;
     }
-
     if (response.status === 401) {
       showAuthOverlay();
     }
@@ -501,75 +482,57 @@ async function createSession() {
 }
 
 async function loadSession(sessionId) {
-  let session;
-
   try {
-    session = await fetchJson(`/v1/sessions/${sessionId}`);
+    const session = await fetchJson(`/v1/sessions/${sessionId}`);
+    state.activeSessionId = sessionId;
+    state.activeMessages = session.messages;
+    elements.chatTitle.textContent = session.title;
+    elements.provider.value = session.provider || "gemini";
+    syncModelOptions(session.model || "");
+    elements.systemPromptDesktop.value = session.system_prompt || "";
+    elements.systemPromptMobile.value = session.system_prompt || "";
+    renderSessions();
+    renderMessages(session.messages);
+    persistPreferences();
   } catch (error) {
     if (error.message.includes("Session not found")) {
       clearInvalidSessionState();
-      setStatus("原会话不存在，请重新创建一个新会话");
+      setStatus("当前会话已失效，请重新创建一个新会话");
       return;
     }
     throw error;
   }
-
-  state.activeSessionId = sessionId;
-  state.activeMessages = session.messages;
-  elements.chatTitle.textContent = session.title;
-  elements.provider.value = session.provider || "gemini";
-  syncModelOptions(session.model || "");
-  elements.systemPrompt.value = session.system_prompt || "";
-  renderSessions();
-  renderMessages(session.messages);
-  persistPreferences();
 }
 
 function stopGeneration() {
-  if (!state.isGenerating || !state.abortController) {
-    return;
-  }
-
+  if (!state.abortController) return;
   state.abortController.abort();
   state.abortController = null;
   state.isGenerating = false;
   syncComposerState();
   renderMessages(state.activeMessages);
   setStatus("已停止等待当前回复");
-
-  if (state.pendingUserMessage) {
-    elements.userMessage.value = state.pendingUserMessage;
-    elements.userMessage.dispatchEvent(new Event("input"));
-  }
 }
 
 async function submitTurn(event) {
   event.preventDefault();
-
   const userMessage = elements.userMessage.value.trim();
-  if (!userMessage || state.isGenerating) {
-    return;
-  }
+  if (!userMessage || state.isGenerating) return;
 
   if (!state.activeSessionId) {
     const session = await createSession();
     elements.chatTitle.textContent = session.title;
   }
 
-  if (isMobileViewport()) {
-    toggleQuickActionsPanel(false);
-  }
-
-  state.pendingUserMessage = userMessage;
+  closeAllSheets();
   state.abortController = new AbortController();
   state.isGenerating = true;
   syncComposerState();
-  persistPreferences();
   renderMessages(state.activeMessages, {
     userText: userMessage,
-    placeholder: "正在思考并生成回复...",
+    placeholder: "正在思考并生成回复…",
   });
-  setStatus("模型处理中，你可以随时点击“停止等待”");
+  setStatus("模型处理中，你可以随时点“停止”");
 
   try {
     const session = await fetchJson(`/v1/sessions/${state.activeSessionId}/chat`, {
@@ -578,7 +541,7 @@ async function submitTurn(event) {
       body: JSON.stringify({
         provider: elements.provider.value,
         model: elements.model.value || null,
-        system_prompt: elements.systemPrompt.value || null,
+        system_prompt: elements.systemPromptDesktop.value || null,
         user_message: userMessage,
         attachments: state.attachments,
       }),
@@ -587,7 +550,6 @@ async function submitTurn(event) {
 
     state.activeMessages = session.messages;
     state.attachments = [];
-    state.pendingUserMessage = "";
     elements.fileInput.value = "";
     elements.userMessage.value = "";
     elements.userMessage.dispatchEvent(new Event("input"));
@@ -597,9 +559,7 @@ async function submitTurn(event) {
     await refreshSessions();
     setStatus("回复已完成");
   } catch (error) {
-    if (error.name === "AbortError") {
-      return;
-    }
+    if (error.name === "AbortError") return;
     if (error.message.includes("Session not found")) {
       clearInvalidSessionState();
       setStatus("当前会话已失效，请重新创建一个新会话");
@@ -617,119 +577,22 @@ async function submitTurn(event) {
 async function verifyAccess() {
   state.accessPassword = elements.accessPassword.value.trim();
   setAuthStatus("正在验证...");
-
   try {
     await refreshSessions();
     persistPreferences();
     if (state.activeSessionId && state.sessions.some((session) => session.session_id === state.activeSessionId)) {
       await loadSession(state.activeSessionId);
-    } else if (state.sessions.length > 0) {
+    } else if (state.sessions.length) {
       await loadSession(state.sessions[0].session_id);
     } else {
       renderMessages([]);
     }
-    setAuthStatus("验证成功");
     hideAuthOverlay();
+    setAuthStatus("验证成功");
     setStatus("服务就绪");
   } catch (error) {
     setAuthStatus(`验证失败: ${error.message}`);
   }
-}
-
-elements.chatForm.addEventListener("submit", submitTurn);
-elements.newChatButton.addEventListener("click", async () => {
-  const session = await createSession();
-  elements.chatTitle.textContent = session.title;
-  state.activeMessages = [];
-  renderMessages([]);
-  if (isMobileViewport()) {
-    state.sidebarCollapsed = true;
-    applySidebarState();
-  }
-});
-elements.authSubmit.addEventListener("click", verifyAccess);
-elements.stopButton.addEventListener("click", stopGeneration);
-elements.logoutButton.addEventListener("click", () => {
-  stopGeneration();
-  state.accessPassword = "";
-  localStorage.removeItem("cloud-agent-access-password");
-  showAuthOverlay();
-  setStatus("已退出登录，请重新输入访问口令");
-});
-elements.provider.addEventListener("change", () => {
-  syncModelOptions();
-  persistPreferences();
-});
-elements.model.addEventListener("change", persistPreferences);
-elements.systemPrompt.addEventListener("change", persistPreferences);
-elements.userMessage.addEventListener("input", () => {
-  elements.userMessage.style.height = "auto";
-  elements.userMessage.style.height = `${Math.min(elements.userMessage.scrollHeight, 220)}px`;
-});
-elements.userMessage.addEventListener("keydown", (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-    event.preventDefault();
-    elements.chatForm.requestSubmit();
-  }
-});
-
-elements.quickChips.forEach((chip) => {
-  chip.addEventListener("click", () => {
-    elements.userMessage.value = chip.dataset.prompt || "";
-    elements.userMessage.dispatchEvent(new Event("input"));
-    elements.userMessage.focus();
-    if (isMobileViewport()) {
-      toggleQuickActionsPanel(false);
-    }
-  });
-});
-
-elements.quickActionsToggle?.addEventListener("click", () => {
-  toggleQuickActionsPanel();
-});
-
-elements.sidebarToggle.addEventListener("click", () => {
-  state.sidebarCollapsed = !state.sidebarCollapsed;
-  applySidebarState();
-});
-
-elements.sidebarToggleMobile.addEventListener("click", () => {
-  state.sidebarCollapsed = !state.sidebarCollapsed;
-  applySidebarState();
-});
-
-elements.mobileSidebarBackdrop.addEventListener("click", () => {
-  state.sidebarCollapsed = true;
-  applySidebarState();
-});
-
-window.addEventListener("resize", () => {
-  applySidebarState();
-  syncResponsiveComposer();
-});
-
-function updateSidebarButtons() {
-  const collapsed = state.sidebarCollapsed;
-  if (elements.sidebarToggle) {
-    elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
-  }
-  if (elements.sidebarToggleMobile) {
-    elements.sidebarToggleMobile.textContent = collapsed ? "打开会话栏" : "收起会话栏";
-  }
-}
-
-function applySidebarState() {
-  const mobile = isMobileViewport();
-  if (elements.sidebar) {
-    elements.sidebar.classList.toggle("collapsed", state.sidebarCollapsed && !mobile);
-    elements.sidebar.classList.toggle("mobile-open", mobile && !state.sidebarCollapsed);
-  }
-  if (elements.mobileSidebarBackdrop) {
-    elements.mobileSidebarBackdrop.classList.toggle("hidden", !mobile || state.sidebarCollapsed);
-  }
-  document.body.classList.toggle("drawer-open", mobile && !state.sidebarCollapsed);
-  localStorage.setItem("cloud-agent-sidebar-collapsed", state.sidebarCollapsed ? "1" : "0");
-  updateSidebarButtons();
 }
 
 function readFileAsDataUrl(file) {
@@ -750,12 +613,8 @@ function readFileAsText(file) {
   });
 }
 
-elements.fileInput.addEventListener("change", async (event) => {
-  const files = Array.from(event.target.files || []);
-  if (!files.length) {
-    return;
-  }
-
+async function handleFiles(files) {
+  if (!files.length) return;
   setStatus("正在读取附件...");
 
   try {
@@ -783,33 +642,164 @@ elements.fileInput.addEventListener("change", async (event) => {
   } catch (error) {
     setStatus(`附件读取失败: ${error.message}`);
   }
-});
+}
+
+function bindEvents() {
+  elements.chatForm.addEventListener("submit", submitTurn);
+  elements.newChatButton.addEventListener("click", async () => {
+    const session = await createSession();
+    elements.chatTitle.textContent = session.title;
+    state.activeMessages = [];
+    renderMessages([]);
+    if (isMobileViewport()) {
+      state.sidebarCollapsed = true;
+      applySidebarState();
+    }
+  });
+
+  elements.authSubmit.addEventListener("click", verifyAccess);
+  elements.stopButton.addEventListener("click", stopGeneration);
+
+  [elements.logoutButton, elements.logoutButtonMobile].forEach((button) => {
+    button?.addEventListener("click", () => {
+      stopGeneration();
+      state.accessPassword = "";
+      localStorage.removeItem("cloud-agent-access-password");
+      showAuthOverlay();
+      setStatus("已退出登录，请重新输入访问口令");
+    });
+  });
+
+  elements.provider.addEventListener("change", () => {
+    elements.providerMobile.value = elements.provider.value;
+    syncModelOptions();
+    persistPreferences();
+  });
+
+  elements.providerMobile.addEventListener("change", () => {
+    elements.provider.value = elements.providerMobile.value;
+    syncModelOptions();
+    persistPreferences();
+  });
+
+  elements.model.addEventListener("change", () => {
+    elements.modelMobile.value = elements.model.value;
+    persistPreferences();
+  });
+
+  elements.modelMobile.addEventListener("change", () => {
+    elements.model.value = elements.modelMobile.value;
+    persistPreferences();
+    syncMessagePlaceholder();
+  });
+
+  elements.systemPromptDesktop.addEventListener("input", () => {
+    syncSystemPromptFields("desktop");
+    persistPreferences();
+  });
+
+  elements.systemPromptMobile.addEventListener("input", () => {
+    syncSystemPromptFields("mobile");
+    persistPreferences();
+  });
+
+  elements.userMessage.addEventListener("input", () => {
+    elements.userMessage.style.height = "auto";
+    elements.userMessage.style.height = `${Math.min(elements.userMessage.scrollHeight, 160)}px`;
+  });
+
+  elements.userMessage.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      elements.chatForm.requestSubmit();
+    }
+  });
+
+  elements.quickChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      elements.userMessage.value = chip.dataset.prompt || "";
+      elements.userMessage.dispatchEvent(new Event("input"));
+      elements.userMessage.focus();
+      closeAllSheets();
+    });
+  });
+
+  elements.desktopAttachmentTrigger?.addEventListener("click", () => {
+    elements.fileInput.accept = "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh";
+    elements.fileInput.click();
+  });
+
+  elements.attachmentMenuToggle?.addEventListener("click", () => openSheet("attachment"));
+  elements.toolsMenuToggle?.addEventListener("click", () => openSheet("tools"));
+  elements.modelSheetToggle?.addEventListener("click", () => openSheet("model"));
+  elements.advancedSheetToggle?.addEventListener("click", () => openSheet("advanced"));
+  elements.sheetBackdrop?.addEventListener("click", closeAllSheets);
+
+  elements.attachmentFileTrigger?.addEventListener("click", () => {
+    elements.fileInput.accept = "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh";
+    elements.fileInput.click();
+    closeAllSheets();
+  });
+
+  elements.attachmentImageTrigger?.addEventListener("click", () => {
+    elements.fileInput.accept = "image/*";
+    elements.fileInput.click();
+    closeAllSheets();
+  });
+
+  elements.fileInput.addEventListener("change", async (event) => {
+    await handleFiles(Array.from(event.target.files || []));
+  });
+
+  elements.sidebarToggle.addEventListener("click", () => {
+    state.sidebarCollapsed = !state.sidebarCollapsed;
+    applySidebarState();
+  });
+
+  elements.sidebarToggleMobile.addEventListener("click", () => {
+    state.sidebarCollapsed = !state.sidebarCollapsed;
+    applySidebarState();
+  });
+
+  elements.mobileSidebarBackdrop.addEventListener("click", () => {
+    state.sidebarCollapsed = true;
+    applySidebarState();
+  });
+
+  window.addEventListener("resize", () => {
+    syncResponsiveState();
+    applySidebarState();
+  });
+}
 
 async function bootstrap() {
   loadPreferences();
+  elements.providerMobile.innerHTML = elements.provider.innerHTML;
   syncModelOptions(elements.model.value);
-  applySidebarState();
-  syncResponsiveComposer();
   syncComposerState();
-  elements.userMessage.dispatchEvent(new Event("input"));
-
+  syncResponsiveState();
+  applySidebarState();
+  syncTopbarTitle();
+  syncMessagePlaceholder();
+  bindEvents();
   setStatus("正在加载...");
+
   await loadPublicConfig();
 
-  if (state.requiresPassword && state.accessPassword) {
+  if (state.requiresPassword) {
     showAuthOverlay();
-    try {
-      await refreshSessions();
-      hideAuthOverlay();
-    } catch {
-      showAuthOverlay();
+    if (state.accessPassword) {
+      try {
+        await refreshSessions();
+        hideAuthOverlay();
+      } catch {
+        setAuthStatus("请输入访问口令");
+        return;
+      }
+    } else {
       setAuthStatus("请输入访问口令");
       return;
     }
-  } else if (state.requiresPassword) {
-    showAuthOverlay();
-    setAuthStatus("请输入访问口令");
-    return;
   } else {
     hideAuthOverlay();
     await refreshSessions();
@@ -817,7 +807,7 @@ async function bootstrap() {
 
   if (state.activeSessionId && state.sessions.some((session) => session.session_id === state.activeSessionId)) {
     await loadSession(state.activeSessionId);
-  } else if (state.sessions.length > 0) {
+  } else if (state.sessions.length) {
     await loadSession(state.sessions[0].session_id);
   } else {
     clearInvalidSessionState();

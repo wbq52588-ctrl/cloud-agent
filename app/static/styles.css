@@ -513,7 +513,7 @@ textarea {
 
 .mobile-composer-shell {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .mobile-input-shell {
@@ -588,6 +588,10 @@ textarea {
 
 .mobile-status-bar,
 .bottom-sheet {
+  display: none;
+}
+
+.mobile-sidebar-footer {
   display: none;
 }
 
@@ -935,31 +939,33 @@ textarea {
 
   .mobile-input-shell {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) 52px;
+    grid-template-columns: 40px minmax(0, 1fr) 44px;
     align-items: end;
-    gap: 10px;
-    padding: 10px;
-    background: rgba(42, 45, 49, 0.96);
-    border: 1px solid var(--dark-line);
-    border-radius: 28px;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(38, 40, 45, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
     backdrop-filter: blur(14px);
   }
 
   .mobile-text-entry {
-    min-height: 46px;
+    min-height: 38px;
     background: transparent;
     border: none;
     padding: 0;
   }
 
   .mobile-text-entry textarea {
-    min-height: 46px;
-    max-height: 132px;
+    min-height: 38px;
+    max-height: 108px;
     border: none;
     background: transparent;
     color: var(--dark-text);
-    padding: 11px 2px;
+    padding: 8px 2px;
     resize: none;
+    font-size: 15px;
+    line-height: 1.45;
   }
 
   .mobile-text-entry textarea::placeholder {

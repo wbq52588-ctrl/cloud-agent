@@ -193,7 +193,8 @@ function syncMessagePlaceholder() {
 }
 
 function syncTopbarTitle() {
-  elements.mobileProviderTitle.textContent = providerLabel(elements.provider.value);
+  const title = state.activeSessionId ? elements.chatTitle.textContent : "Q";
+  elements.mobileProviderTitle.textContent = title;
 }
 
 function syncGreetingState() {

@@ -41,6 +41,7 @@ body {
   grid-template-columns: 320px minmax(0, 1fr);
   height: 100vh;
   max-height: 100vh;
+  overflow: hidden;
 }
 
 .auth-overlay {
@@ -203,13 +204,15 @@ p {
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 18px;
   overflow: hidden;
-  height: 100%;
-  max-height: calc(100vh - 48px);
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 0;
+  padding: 18px 20px 18px 16px;
 }
 
 .chat-header,
 .composer {
-  padding: 18px 20px;
+  padding: 16px 18px;
 }
 
 .chat-header {
@@ -217,6 +220,15 @@ p {
   justify-content: space-between;
   align-items: flex-start;
   gap: 18px;
+}
+
+.chat-header h2 {
+  margin-bottom: 8px;
+  line-height: 1.15;
+}
+
+.chat-header .header-note {
+  font-size: 14px;
 }
 
 .chat-header-main {
@@ -263,16 +275,19 @@ textarea {
   padding: 0;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .message-list {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
-  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   scroll-behavior: smooth;
 }
 
@@ -435,17 +450,18 @@ textarea {
 
 .composer {
   display: grid;
-  gap: 14px;
-  background: rgba(251, 247, 242, 0.96);
+  gap: 12px;
+  background: rgba(251, 247, 242, 0.98);
   backdrop-filter: blur(14px);
-  position: sticky;
-  bottom: 0;
-  z-index: 5;
+  box-shadow:
+    0 18px 45px rgba(53, 42, 29, 0.12),
+    0 -8px 24px rgba(53, 42, 29, 0.06);
+  align-self: stretch;
 }
 
 .composer-top {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .quick-actions {
@@ -466,7 +482,7 @@ textarea {
 .tool-row {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .compact-label {
@@ -496,8 +512,8 @@ textarea {
 }
 
 .message-box textarea {
-  min-height: 68px;
-  max-height: 220px;
+  min-height: 58px;
+  max-height: 180px;
 }
 
 .composer-actions {
@@ -515,12 +531,12 @@ textarea {
 
 @media (max-width: 960px) {
   body {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .app-shell {
     grid-template-columns: 1fr;
-    height: auto;
+    height: 100vh;
     min-height: 100vh;
   }
 
@@ -533,8 +549,12 @@ textarea {
   }
 
   .chat-panel {
-    min-height: auto;
-    max-height: none;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+    padding: 14px;
   }
 
   .chat-header {
@@ -582,7 +602,15 @@ textarea {
   }
 
   .transcript-shell {
-    min-height: 420px;
-    overflow: visible;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .message-list {
+    min-height: 0;
+  }
+
+  .composer {
+    gap: 10px;
   }
 }

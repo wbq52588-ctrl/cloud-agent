@@ -1,4 +1,4 @@
-:root {
+ï»¿:root {
   --bg: #f2ede4;
   --panel: #fbf7f2;
   --panel-strong: #fffdfa;
@@ -132,11 +132,6 @@ body {
   gap: 12px;
 }
 
-.mobile-sidebar-search,
-.mobile-new-chat-button {
-  display: none;
-}
-
 .sidebar-section {
   margin-top: 18px;
 }
@@ -213,24 +208,17 @@ p {
   gap: 10px;
 }
 
-.session-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-
 .session-item {
   width: 100%;
   text-align: left;
   border: 1px solid var(--line);
   background: var(--panel-strong);
-  border-radius: 18px;
-  padding: 14px 15px;
+  border-radius: 16px;
+  padding: 12px 14px;
   cursor: pointer;
 }
 
-.session-card.active .session-item {
+.session-item.active {
   border-color: var(--accent);
   background: #eef8f6;
 }
@@ -241,27 +229,9 @@ p {
 }
 
 .session-item span {
-  margin-top: 5px;
+  margin-top: 6px;
   color: var(--muted);
   font-size: 12px;
-}
-
-.session-delete-button {
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(221, 209, 195, 0.9);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #9aa3af;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 140ms ease, background 140ms ease;
-}
-
-.session-delete-button:hover {
-  transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.92);
 }
 
 .chat-panel {
@@ -293,10 +263,6 @@ p {
 
 .mobile-topbar,
 .mobile-hero {
-  display: none;
-}
-
-.hero-suggestions {
   display: none;
 }
 
@@ -550,31 +516,6 @@ textarea {
   gap: 8px;
 }
 
-.mobile-toolbar-shell {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.mobile-control-pill {
-  min-height: 38px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #cfd6df;
-  font: inherit;
-  font-size: 13px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-}
-
-.mobile-control-pill.is-active {
-  background: rgba(91, 135, 255, 0.16);
-  color: #eef3ff;
-  box-shadow: inset 0 0 0 1px rgba(91, 135, 255, 0.35);
-}
-
 .mobile-input-shell {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 110px;
@@ -612,8 +553,31 @@ textarea {
   height: 48px;
   border-radius: 999px;
   padding: 0 18px;
-  background: linear-gradient(135deg, #5b87ff, #3c63e6);
-  box-shadow: 0 10px 24px rgba(60, 99, 230, 0.28);
+}
+
+.mobile-toolbar-shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mobile-control-pill {
+  min-height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cfd6df;
+  font: inherit;
+  font-size: 13px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.mobile-control-pill.is-active {
+  background: rgba(91, 135, 255, 0.16);
+  color: #eef3ff;
+  box-shadow: inset 0 0 0 1px rgba(91, 135, 255, 0.35);
 }
 
 .mobile-toolbar-row {
@@ -624,11 +588,6 @@ textarea {
 
 .mobile-status-bar,
 .bottom-sheet {
-  display: none;
-}
-
-.provider-chip-list,
-.model-card-list {
   display: none;
 }
 
@@ -706,8 +665,9 @@ textarea {
   }
 
   .mobile-sidebar-search input {
+    width: 100%;
     background: #111317;
-    border-color: transparent;
+    border: 1px solid transparent;
     color: var(--dark-text);
     border-radius: 999px;
     padding: 14px 18px;
@@ -760,35 +720,13 @@ textarea {
 
   .session-item {
     border: none;
-    background: rgba(255, 255, 255, 0.03);
+    background: transparent;
     color: var(--dark-text);
-    padding: 13px 14px;
-    border-radius: 20px;
+    padding: 12px 14px;
   }
 
-  .session-card.active .session-item {
-    background: linear-gradient(135deg, rgba(52, 83, 170, 0.95), rgba(38, 69, 140, 0.95));
-  }
-
-  .session-item strong {
-    font-size: 14px;
-    line-height: 1.35;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .session-item span {
-    font-size: 11px;
-  }
-
-  .session-delete-button {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: rgba(255, 255, 255, 0.05);
-    color: #d7dce4;
-    font-size: 18px;
+  .session-item.active {
+    background: #24458c;
   }
 
   .chat-panel {
@@ -844,23 +782,6 @@ textarea {
     letter-spacing: -0.04em;
   }
 
-  .hero-suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 12px;
-  }
-
-  .hero-chip {
-    border: none;
-    padding: 14px 18px;
-    border-radius: 999px;
-    background: #181a1f;
-    color: #d7dce3;
-    font-size: 15px;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  }
-
   .mobile-avatar,
   .round-tool-button,
   .round-send-button,
@@ -880,19 +801,18 @@ textarea {
     font-weight: 700;
   }
 
-.mobile-nav-button,
+  .mobile-nav-button,
   .round-tool-button,
   .icon-button {
     border: none;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--dark-text);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   }
 
   .mobile-nav-button span {
     display: block;
     width: 18px;
-    height: 2.5px;
+    height: 2px;
     border-radius: 999px;
     background: currentColor;
   }
@@ -907,7 +827,7 @@ textarea {
   }
 
   .message-list {
-    padding: 6px 18px 178px;
+    padding: 8px 18px 240px;
     gap: 14px;
   }
 
@@ -998,8 +918,8 @@ textarea {
   .composer {
     position: sticky;
     bottom: 0;
-    padding: 0 14px calc(10px + env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, rgba(7, 9, 13, 0), rgba(7, 9, 13, 0.82) 18%, rgba(7, 9, 13, 0.95) 32%, rgba(7, 9, 13, 1) 100%);
+    padding: 0 14px calc(14px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(7, 9, 13, 0), rgba(7, 9, 13, 0.86) 14%, rgba(7, 9, 13, 0.96) 26%, rgba(7, 9, 13, 1) 100%);
   }
 
   .attachment-list {
@@ -1015,10 +935,10 @@ textarea {
 
   .mobile-input-shell {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) 56px;
+    grid-template-columns: 44px minmax(0, 1fr) 52px;
     align-items: end;
     gap: 10px;
-    padding: 10px 10px 10px 8px;
+    padding: 10px;
     background: rgba(42, 45, 49, 0.96);
     border: 1px solid var(--dark-line);
     border-radius: 28px;
@@ -1047,40 +967,31 @@ textarea {
   }
 
   .round-send-button {
-    width: 54px;
-    height: 54px;
+    width: 52px;
+    height: 52px;
     font-size: 0;
     position: relative;
-    border-radius: 18px;
   }
 
   .round-send-button::before {
-    content: "â†?;
-    font-size: 24px;
+    content: "âž¤";
+    font-size: 18px;
     transform: translateX(1px);
   }
 
   .mobile-toolbar-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 2px 2px 0;
-    overflow-x: auto;
-    scrollbar-width: none;
+    gap: 10px;
+    padding: 0 2px;
   }
 
   .mobile-toolbar-row .round-tool-button {
-    min-width: 56px;
-    height: 38px;
-    padding: 0 12px;
-    background: rgba(255, 255, 255, 0.04);
+    width: 46px;
+    height: 46px;
+    background: rgba(255, 255, 255, 0.05);
     color: #d3dae4;
     font-size: 12px;
-    border-radius: 14px;
-  }
-
-  .mobile-toolbar-row::-webkit-scrollbar {
-    display: none;
   }
 
   .mobile-status-bar {
@@ -1088,7 +999,7 @@ textarea {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 2px 2px 0;
+    padding: 0 2px;
   }
 
   .mobile-status-bar .status-text,
@@ -1136,77 +1047,6 @@ textarea {
     gap: 10px;
   }
 
-  .provider-chip-list {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-    scrollbar-width: none;
-  }
-
-  .provider-chip-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .provider-chip {
-    border: none;
-    padding: 12px 16px;
-    border-radius: 999px;
-    background: #1f2126;
-    color: #bfc7d2;
-    font: inherit;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  .provider-chip.active {
-    background: #314fa7;
-    color: white;
-  }
-
-  .model-card-list {
-    display: grid;
-    gap: 10px;
-  }
-
-  .model-card {
-    width: 100%;
-    border: none;
-    background: #1b1e23;
-    border-radius: 20px;
-    padding: 16px 18px;
-    color: var(--dark-text);
-    text-align: left;
-    display: grid;
-    gap: 6px;
-    cursor: pointer;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  }
-
-  .model-card span {
-    font-size: 15px;
-    font-weight: 700;
-  }
-
-  .model-card strong {
-    color: #99a3af;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .model-card.active {
-    background: linear-gradient(135deg, rgba(68, 102, 204, 0.96), rgba(47, 80, 172, 0.96));
-  }
-
-  .model-card.active strong {
-    color: rgba(255, 255, 255, 0.84);
-  }
-
-  .round-send-button::before {
-    content: "â†?;
-  }
-
   .sheet-menu-item {
     width: 100%;
     border: none;
@@ -1230,80 +1070,6 @@ textarea {
     font-size: 12px;
     font-weight: 500;
   }
-  .provider-chip-list {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-    scrollbar-width: none;
-  }
-
-  .provider-chip-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .provider-chip {
-    border: none;
-    padding: 12px 16px;
-    border-radius: 999px;
-    background: #1f2126;
-    color: #bfc7d2;
-    font: inherit;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  .provider-chip.active {
-    background: #314fa7;
-    color: white;
-  }
-
-  .model-card-list {
-    display: grid;
-    gap: 10px;
-  }
-
-  .model-card {
-    width: 100%;
-    border: none;
-    background: #1b1e23;
-    border-radius: 20px;
-    padding: 16px 18px;
-    color: var(--dark-text);
-    text-align: left;
-    display: grid;
-    gap: 6px;
-    cursor: pointer;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  }
-
-  .model-card span {
-    font-size: 15px;
-    font-weight: 700;
-  }
-
-  .model-card strong {
-    color: #99a3af;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.45;
-  }
-
-  .model-card em {
-    font-style: normal;
-    font-size: 11px;
-    color: #7f8b98;
-  }
-
-  .model-card.active {
-    background: linear-gradient(135deg, rgba(68, 102, 204, 0.96), rgba(47, 80, 172, 0.96));
-  }
-
-  .model-card.active strong,
-  .model-card.active em {
-    color: rgba(255, 255, 255, 0.82);
-  }
 
   .sheet-form label {
     color: var(--dark-text);
@@ -1316,8 +1082,3 @@ textarea {
     color: var(--dark-text);
   }
 }
-
-
-
-
-

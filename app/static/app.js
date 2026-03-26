@@ -1,4 +1,4 @@
-const state = {
+﻿const state = {
   sessions: [],
   activeSessionId: null,
   activeMessages: [],
@@ -218,9 +218,7 @@ function closeAllSheets() {
 }
 
 function syncMobileControls() {
-  if (!elements.mobileToolbarRow || !elements.mobileControlsToggle) {
-    return;
-  }
+  if (!elements.mobileToolbarRow || !elements.mobileControlsToggle) return;
   const expanded = state.mobileControlsExpanded && isMobileViewport();
   elements.mobileToolbarRow.classList.toggle("hidden", !expanded);
   elements.mobileToolbarRow.classList.toggle("is-open", expanded);
@@ -388,40 +386,22 @@ function syncModelOptions(preferredModel) {
 }
 
 function renderModelPickerCards(provider, options, activeModel) {
-  if (!elements.providerChipList || !elements.modelCardList) {
-    return;
-  }
+  if (!elements.providerChipList || !elements.modelCardList) return;
 
   const providerEntries = Object.entries(providerTitles).filter(([key]) => modelOptions[key]);
-  elements.providerChipList.innerHTML = providerEntries
-    .map(
-      ([value, label]) => `
-        <button
-          type="button"
-          class="provider-chip ${value === provider ? "active" : ""}"
-          data-provider-card="${value}"
-        >
-          ${escapeHtml(label)}
-        </button>
-      `,
-    )
-    .join("");
+  elements.providerChipList.innerHTML = providerEntries.map(([value, label]) => `
+    <button type="button" class="provider-chip ${value === provider ? "active" : ""}" data-provider-card="${value}">
+      ${escapeHtml(label)}
+    </button>
+  `).join("");
 
-  elements.modelCardList.innerHTML = options
-    .map(
-      (option) => `
-        <button
-          type="button"
-          class="model-card ${option.value === activeModel ? "active" : ""}"
-          data-model-card="${option.value}"
-        >
-          <span>${escapeHtml(modelDescriptions[provider]?.[option.value]?.title || option.label)}</span>
-          <strong>${escapeHtml(modelDescriptions[provider]?.[option.value]?.detail || option.label)}</strong>
-          <em>${option.value === activeModel ? "当前使用" : "点击切换"}</em>
-        </button>
-      `,
-    )
-    .join("");
+  elements.modelCardList.innerHTML = options.map((option) => `
+    <button type="button" class="model-card ${option.value === activeModel ? "active" : ""}" data-model-card="${option.value}">
+      <span>${escapeHtml(modelDescriptions[provider]?.[option.value]?.title || option.label)}</span>
+      <strong>${escapeHtml(modelDescriptions[provider]?.[option.value]?.detail || option.label)}</strong>
+      <em>${option.value === activeModel ? "当前使用" : "点击切换"}</em>
+    </button>
+  `).join("");
 
   document.querySelectorAll("[data-provider-card]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -441,6 +421,7 @@ function renderModelPickerCards(provider, options, activeModel) {
       persistPreferences();
       syncMessagePlaceholder();
       closeAllSheets();
+      closeMobileControls();
     });
   });
 }
@@ -481,14 +462,11 @@ function renderSessions() {
   elements.sessionList.innerHTML = sessions
     .map(
       (session) => `
-        <article class="session-card ${session.session_id === state.activeSessionId ? "active" : ""}">
-          <button class="session-item" data-session-id="${session.session_id}">
-            <strong>${escapeHtml(session.title)}</strong>
-            <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
-            <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
-          </button>
-          <button class="session-delete-button" type="button" data-delete-session="${session.session_id}" aria-label="删除会话">×</button>
-        </article>
+        <button class="session-item ${session.session_id === state.activeSessionId ? "active" : ""}" data-session-id="${session.session_id}">
+          <strong>${escapeHtml(session.title)}</strong>
+          <span>${escapeHtml(session.provider || "未选择模型")} · ${escapeHtml(session.model || "默认模型")}</span>
+          <span class="session-meta">${formatRelativeTime(session.updated_at)} · ${session.message_count} 条消息</span>
+        </button>
       `,
     )
     .join("");
@@ -500,34 +478,6 @@ function renderSessions() {
         state.sidebarCollapsed = true;
         applySidebarState();
       }
-    });
-  });
-
-  document.querySelectorAll("[data-delete-session]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      const sessionId = button.dataset.deleteSession;
-      if (!sessionId) {
-        return;
-      }
-
-      if (!window.confirm("确认删除这个会话吗？删除后无法恢复。")) {
-        return;
-      }
-
-      await fetchJson(`/v1/sessions/${sessionId}`, { method: "DELETE" });
-
-      if (state.activeSessionId === sessionId) {
-        clearInvalidSessionState();
-      }
-
-      await refreshSessions();
-
-      if (!state.activeSessionId && state.sessions.length > 0) {
-        await loadSession(state.sessions[0].session_id);
-      }
-
-      setStatus("会话已删除");
     });
   });
 }
@@ -880,7 +830,6 @@ function bindEvents() {
       elements.userMessage.dispatchEvent(new Event("input"));
       elements.userMessage.focus();
       closeAllSheets();
-      closeMobileControls();
     });
   });
 
@@ -897,12 +846,8 @@ function bindEvents() {
   elements.sheetBackdrop?.addEventListener("click", closeAllSheets);
   [elements.messageList, elements.transcriptShell, elements.chatPanel].forEach((element) => {
     element?.addEventListener("click", (event) => {
-      if (!state.openSheet && !state.mobileControlsExpanded) {
-        return;
-      }
-      if (event.target.closest(".composer") || event.target.closest(".bottom-sheet") || event.target.closest(".mobile-toolbar")) {
-        return;
-      }
+      if (!state.openSheet && !state.mobileControlsExpanded) return;
+      if (event.target.closest(".composer") || event.target.closest(".bottom-sheet") || event.target.closest(".mobile-toolbar")) return;
       closeMobileControls();
       closeAllSheets();
     });

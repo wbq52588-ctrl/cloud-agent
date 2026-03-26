@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260326c" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260326d" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -50,7 +50,7 @@
             <div>
               <p class="eyebrow">Multi Model Agent</p>
               <h2 id="chat-title">请选择或新建一个会话</h2>
-              <p class="header-note">支持 Gemini / OpenAI / GLM / VPS 控制切换，发送后会立即出现占位回复，你可以随时停止等待。</p>
+              <p class="header-note">消息区会独立滚动，发送后立即显示占位回复，可随时停止等待。</p>
             </div>
           </div>
           <div class="controls">
@@ -70,11 +70,13 @@
           </div>
         </header>
 
-        <section id="message-list" class="message-list">
-          <div class="empty-state">
-            <h3>先创建一个会话</h3>
-            <p>这个版本已经支持多模型切换、上下文保留、文件上传和网页聊天。</p>
-          </div>
+        <section class="transcript-shell">
+          <section id="message-list" class="message-list">
+            <div class="empty-state">
+              <h3>开始第一轮对话</h3>
+              <p>发出消息后会先显示你的消息和助手占位卡片，不用再盯着页面干等。</p>
+            </div>
+          </section>
         </section>
 
         <form id="chat-form" class="composer">
@@ -117,6 +119,6 @@
       </main>
     </div>
 
-    <script src="/static/app.js?v=20260326c"></script>
+    <script src="/static/app.js?v=20260326d"></script>
   </body>
 </html>

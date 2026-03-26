@@ -1,10 +1,10 @@
 :root {
-  --bg: #f3eee6;
+  --bg: #f2ede4;
   --panel: #fbf7f2;
   --panel-strong: #fffdfa;
   --ink: #1f2937;
   --muted: #6b7280;
-  --line: #ded2c4;
+  --line: #ddd1c3;
   --accent: #0f766e;
   --accent-strong: #115e59;
   --user: #dff4ed;
@@ -16,14 +16,19 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  overflow: hidden;
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--ink);
-  overflow: auto;
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(180, 83, 9, 0.12), transparent 28%),
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(180, 83, 9, 0.1), transparent 28%),
     var(--bg);
 }
 
@@ -34,7 +39,8 @@ body {
 .app-shell {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
-  min-height: 100dvh;
+  height: 100vh;
+  max-height: 100vh;
 }
 
 .auth-overlay {
@@ -64,10 +70,9 @@ body {
 
 .sidebar {
   border-right: 1px solid var(--line);
-  background: rgba(251, 247, 242, 0.82);
+  background: rgba(251, 247, 242, 0.84);
   backdrop-filter: blur(12px);
   overflow: auto;
-  max-height: 100dvh;
   transition: width 180ms ease, padding 180ms ease, opacity 180ms ease;
 }
 
@@ -84,7 +89,7 @@ body {
 .brand,
 .sidebar-section,
 .chat-header,
-.message-list,
+.transcript-shell,
 .composer {
   background: var(--panel);
   border: 1px solid rgba(222, 210, 196, 0.8);
@@ -197,7 +202,6 @@ p {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 18px;
-  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -209,8 +213,8 @@ p {
 .chat-header {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
   align-items: flex-start;
+  gap: 18px;
 }
 
 .chat-header-main {
@@ -251,13 +255,20 @@ textarea {
   resize: vertical;
 }
 
-.message-list {
+.transcript-shell {
   min-height: 0;
-  padding: 22px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.message-list {
+  height: 100%;
+  min-height: 0;
   overflow: auto;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   scroll-behavior: smooth;
 }
 
@@ -269,23 +280,54 @@ textarea {
   color: var(--muted);
 }
 
+.message-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.message-row.user {
+  justify-items: end;
+}
+
+.message-row.user .message-badge {
+  order: 2;
+}
+
+.message-row.user .message {
+  order: 1;
+}
+
+.message-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent-strong);
+  background: rgba(15, 118, 110, 0.12);
+  border: 1px solid rgba(15, 118, 110, 0.2);
+}
+
 .message {
-  width: min(100%, 940px);
-  padding: 16px 18px;
+  width: min(100%, 860px);
+  padding: 18px 20px;
   border-radius: 20px;
-  line-height: 1.66;
+  line-height: 1.7;
   box-shadow: 0 8px 24px rgba(50, 36, 20, 0.08);
   border: 1px solid rgba(222, 210, 196, 0.75);
+  background: var(--panel-strong);
 }
 
 .message.user {
-  margin-left: auto;
   background: var(--user);
   border-bottom-right-radius: 8px;
 }
 
 .message.assistant {
-  margin-right: auto;
   background: var(--assistant);
   border-bottom-left-radius: 8px;
 }
@@ -320,9 +362,10 @@ textarea {
 
 .message-content {
   color: var(--ink);
-  line-height: 1.78;
+  line-height: 1.8;
   word-break: break-word;
   font-size: 15px;
+  max-width: 72ch;
 }
 
 .message-content p {
@@ -464,15 +507,19 @@ textarea {
 }
 
 @media (max-width: 960px) {
+  body {
+    overflow: auto;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
   }
 
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--line);
-    min-height: auto;
-    max-height: none;
     width: 100%;
     opacity: 1;
     padding: 24px;
@@ -509,7 +556,24 @@ textarea {
     flex-wrap: wrap;
   }
 
+  .message-row {
+    grid-template-columns: 1fr;
+  }
+
+  .message-row.user .message-badge,
+  .message-row.user .message {
+    order: initial;
+  }
+
+  .message-badge {
+    display: none;
+  }
+
   .message {
     width: 100%;
+  }
+
+  .transcript-shell {
+    min-height: 420px;
   }
 }

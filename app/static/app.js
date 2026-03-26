@@ -281,7 +281,7 @@ function renderMessages(messages, pending = null) {
     elements.messageList.innerHTML = `
       <div class="empty-state">
         <h3>开始第一轮对话</h3>
-        <p>发出消息后会立即看到你的输入和助手占位卡片，不用再盯着页面干等。</p>
+        <p>发出消息后会先显示你的消息和助手占位卡片，不用再盯着页面干等。</p>
       </div>
     `;
     return;
@@ -294,20 +294,25 @@ function renderMessages(messages, pending = null) {
   }
 
   elements.messageList.innerHTML = items
-    .map(
-      (message, index) => `
-        <article class="message ${message.role} ${message.pending ? "pending" : ""}">
-          <div class="message-toolbar">
-            <div class="message-meta">
-              <span class="message-role">${message.role === "user" ? "你" : "助手"}</span>
-              <span class="message-time">${message.pending ? "思考中" : formatRelativeTime(new Date().toISOString())}</span>
+    .map((message, index) => {
+      const badge = message.role === "user" ? "你" : "AI";
+      const title = message.role === "user" ? "你的消息" : message.pending ? "正在思考" : "助手回复";
+      return `
+        <article class="message-row ${message.role}">
+          <div class="message-badge">${badge}</div>
+          <article class="message ${message.role} ${message.pending ? "pending" : ""}">
+            <div class="message-toolbar">
+              <div class="message-meta">
+                <span class="message-role">${title}</span>
+                <span class="message-time">${message.pending ? "处理中" : `第 ${index + 1} 条`}</span>
+              </div>
+              ${message.pending ? "" : `<button type="button" class="ghost-button" data-copy-index="${index}">复制</button>`}
             </div>
-            ${message.pending ? "" : `<button type="button" class="ghost-button" data-copy-index="${index}">复制</button>`}
-          </div>
-          <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
+            <div class="message-content">${message.pending ? `<div class="thinking-line">${escapeHtml(message.content)}</div>` : formatContent(message.content)}</div>
+          </article>
         </article>
-      `,
-    )
+      `;
+    })
     .join("");
 
   document.querySelectorAll("[data-copy-index]").forEach((button) => {

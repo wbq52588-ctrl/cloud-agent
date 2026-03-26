@@ -293,6 +293,7 @@ function syncComposerState() {
 }
 
 function renderAttachments() {
+  if (!elements.attachmentList) return;
   if (!state.attachments.length) {
     elements.attachmentList.innerHTML = "";
     return;

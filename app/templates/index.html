@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cloud Agent Console</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260327l" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260327m" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -119,10 +119,6 @@
             <details id="tools-disclosure" class="tools-disclosure" open>
               <summary class="tools-summary">高级选项</summary>
               <div class="tool-row">
-                <div class="upload-box compact-label">
-                  <span>附件</span>
-                  <button id="desktop-attachment-trigger" type="button" class="ghost-button align-start">选择文件</button>
-                </div>
                 <label class="system-prompt compact-label">
                   <span>系统提示词</span>
                   <textarea id="system-prompt" rows="2" placeholder="例如：你是一个中文运维助手。"></textarea>
@@ -131,11 +127,10 @@
             </details>
           </div>
 
-          <div id="attachment-list" class="attachment-list"></div>
+          <div id="attachment-list" class="attachment-list hidden"></div>
 
           <div class="mobile-composer-shell">
             <div class="mobile-input-shell">
-              <button id="attachment-menu-toggle" type="button" class="round-tool-button" aria-label="打开附件菜单">+</button>
               <div class="mobile-text-entry">
                 <textarea id="user-message" rows="1" placeholder="问问 Gemini" required></textarea>
               </div>
@@ -157,20 +152,6 @@
           </div>
         </form>
       </main>
-    </div>
-
-    <div id="attachment-sheet" class="bottom-sheet hidden" aria-hidden="true">
-      <div class="sheet-handle"></div>
-      <div class="sheet-header">
-        <h3>添加内容</h3>
-        <button type="button" class="sheet-close-button" data-close-sheet aria-label="关闭">×</button>
-      </div>
-      <div class="sheet-menu">
-        <button type="button" id="attachment-file-trigger" class="sheet-menu-item">
-          <span>文件</span>
-          <strong>上传文档或代码</strong>
-        </button>
-      </div>
     </div>
 
     <div id="tools-sheet" class="bottom-sheet hidden" aria-hidden="true">
@@ -238,6 +219,6 @@
       accept=".txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
     />
 
-    <script src="/static/app.js?v=20260327l"></script>
+    <script src="/static/app.js?v=20260327m"></script>
   </body>
 </html>

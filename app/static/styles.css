@@ -511,7 +511,7 @@ textarea {
 
 .tool-row {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
@@ -1049,7 +1049,7 @@ textarea {
 
   .mobile-input-shell {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) 44px;
     align-items: end;
     gap: 8px;
     padding: 8px;

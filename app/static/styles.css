@@ -749,16 +749,18 @@ textarea {
   }
 
   .chat-header {
-    position: sticky;
+    position: fixed;
+    left: 0;
+    right: 0;
     top: 0;
-    z-index: 12;
-    padding: calc(10px + env(safe-area-inset-top)) 14px 6px;
-    background: linear-gradient(180deg, rgba(7, 9, 13, 0.98), rgba(7, 9, 13, 0.9));
+    z-index: 30;
+    padding: calc(10px + env(safe-area-inset-top)) 14px 8px;
+    background: linear-gradient(180deg, rgba(7, 9, 13, 0.98), rgba(7, 9, 13, 0.92));
     backdrop-filter: blur(18px);
   }
 
   .mobile-topbar {
-    display: grid;
+    display: grid !important;
     grid-template-columns: 42px minmax(0, 1fr) 42px;
     align-items: center;
     min-height: 42px;
@@ -809,6 +811,8 @@ textarea {
     background: radial-gradient(circle at 30% 30%, #4fd1c5, #3b82f6 65%, #1d4ed8);
     color: white;
     font-weight: 700;
+    display: grid;
+    place-items: center;
   }
 
   .mobile-nav-button,
@@ -838,7 +842,7 @@ textarea {
 
   .transcript-shell {
     min-height: 0;
-    padding: 0 0 4px;
+    padding: calc(60px + env(safe-area-inset-top)) 0 4px;
   }
 
   body.has-conversation .mobile-hero {
@@ -846,11 +850,16 @@ textarea {
   }
 
   body.has-conversation .chat-header {
-    padding-bottom: 4px;
+    min-height: calc(56px + env(safe-area-inset-top));
+    padding-bottom: 6px;
+  }
+
+  body.has-conversation .transcript-shell {
+    padding-top: calc(58px + env(safe-area-inset-top));
   }
 
   body.has-conversation .message-list {
-    padding-top: 4px;
+    padding-top: 6px;
   }
 
   .message-list {

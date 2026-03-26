@@ -38,7 +38,7 @@ const modelDefaults = {
 };
 
 const providerTitles = {
-  gemini: "Q",
+  gemini: "Gemini",
   openai: "OpenAI",
   zhipu: "GLM",
   vps: "VPS",
@@ -171,7 +171,7 @@ function formatRelativeTime(iso) {
 }
 
 function providerLabel(provider) {
-  return providerTitles[provider] || "Q";
+  return providerTitles[provider] || "Gemini";
 }
 
 function setStatus(text) {
@@ -185,7 +185,7 @@ function syncMessagePlaceholder() {
 }
 
 function syncTopbarTitle() {
-  const title = state.activeSessionId ? elements.chatTitle.textContent : "Q";
+  const title = state.activeSessionId ? elements.chatTitle.textContent : "Gemini";
   elements.mobileProviderTitle.textContent = title;
 }
 
@@ -336,7 +336,7 @@ function loadPreferences() {
   if (raw) {
     try {
       const data = JSON.parse(raw);
-      elements.provider.value = data.provider || "gemini";
+      elements.provider.value = data.provider || "vps";
       elements.providerMobile.value = elements.provider.value;
       syncModelOptions(data.model || "");
       elements.systemPromptDesktop.value = data.systemPrompt || "";
@@ -352,6 +352,17 @@ function loadPreferences() {
   if (isMobileViewport()) {
     state.sidebarCollapsed = true;
   }
+}
+
+function syncViewportInsets() {
+  if (!window.visualViewport || !isMobileViewport()) {
+    document.documentElement.style.setProperty("--keyboard-offset", "0px");
+    return;
+  }
+
+  const viewport = window.visualViewport;
+  const keyboardOffset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+  document.documentElement.style.setProperty("--keyboard-offset", `${keyboardOffset}px`);
 }
 
 function syncModelOptions(preferredModel) {
@@ -417,10 +428,11 @@ function bindPromptButtons(root = document) {
     if (button.dataset.boundPrompt === "1") return;
     button.dataset.boundPrompt = "1";
     button.addEventListener("click", () => {
+      if (state.isGenerating) return;
       elements.userMessage.value = button.dataset.prompt || "";
       elements.userMessage.dispatchEvent(new Event("input"));
-      elements.userMessage.focus();
       closeAllSheets();
+      elements.chatForm.requestSubmit();
     });
   });
 }
@@ -476,6 +488,7 @@ function renderSessions() {
       if (isMobileViewport()) {
         state.sidebarCollapsed = true;
         applySidebarState();
+        syncViewportInsets();
       }
     });
   });
@@ -599,6 +612,9 @@ async function loadSession(sessionId) {
     state.activeMessages = session.messages;
     elements.chatTitle.textContent = session.title;
     elements.provider.value = session.provider || "gemini";
+    if (!session.provider) {
+      elements.provider.value = "vps";
+    }
     syncModelOptions(session.model || "");
     elements.systemPromptDesktop.value = session.system_prompt || "";
     elements.systemPromptMobile.value = session.system_prompt || "";
@@ -899,6 +915,20 @@ function bindEvents() {
     syncResponsiveState();
     applySidebarState();
     syncMobileControls();
+    syncViewportInsets();
+  });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncViewportInsets);
+    window.visualViewport.addEventListener("scroll", syncViewportInsets);
+  }
+
+  elements.userMessage.addEventListener("focus", () => {
+    window.setTimeout(syncViewportInsets, 80);
+  });
+
+  elements.userMessage.addEventListener("blur", () => {
+    window.setTimeout(syncViewportInsets, 80);
   });
 }
 
@@ -910,6 +940,7 @@ async function bootstrap() {
   syncResponsiveState();
   applySidebarState();
   syncMobileControls();
+  syncViewportInsets();
   syncTopbarTitle();
   syncMessagePlaceholder();
   bindEvents();

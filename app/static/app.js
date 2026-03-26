@@ -65,6 +65,7 @@ const elements = {
   sidebar: document.getElementById("sidebar"),
   sidebarToggle: document.getElementById("sidebar-toggle"),
   sidebarToggleMobile: document.getElementById("sidebar-toggle-mobile"),
+  mobileSidebarBackdrop: document.getElementById("mobile-sidebar-backdrop"),
 };
 
 function escapeHtml(text) {
@@ -135,6 +136,10 @@ function formatRelativeTime(iso) {
 
 function setStatus(text) {
   elements.statusText.textContent = text;
+}
+
+function isMobileViewport() {
+  return window.innerWidth <= 960;
 }
 
 function syncComposerState() {
@@ -234,6 +239,9 @@ function loadPreferences() {
 
   state.accessPassword = localStorage.getItem("cloud-agent-access-password") || "";
   state.sidebarCollapsed = localStorage.getItem("cloud-agent-sidebar-collapsed") === "1";
+  if (isMobileViewport()) {
+    state.sidebarCollapsed = true;
+  }
 }
 
 function setAuthStatus(text) {
@@ -272,7 +280,13 @@ function renderSessions() {
     .join("");
 
   document.querySelectorAll(".session-item").forEach((button) => {
-    button.addEventListener("click", () => loadSession(button.dataset.sessionId));
+    button.addEventListener("click", async () => {
+      await loadSession(button.dataset.sessionId);
+      if (isMobileViewport()) {
+        state.sidebarCollapsed = true;
+        applySidebarState();
+      }
+    });
   });
 }
 
@@ -555,6 +569,10 @@ elements.newChatButton.addEventListener("click", async () => {
   elements.chatTitle.textContent = session.title;
   state.activeMessages = [];
   renderMessages([]);
+  if (isMobileViewport()) {
+    state.sidebarCollapsed = true;
+    applySidebarState();
+  }
 });
 elements.authSubmit.addEventListener("click", verifyAccess);
 elements.stopButton.addEventListener("click", stopGeneration);
@@ -600,7 +618,36 @@ elements.sidebarToggleMobile.addEventListener("click", () => {
   applySidebarState();
 });
 
+elements.mobileSidebarBackdrop.addEventListener("click", () => {
+  state.sidebarCollapsed = true;
+  applySidebarState();
+});
+
 window.addEventListener("resize", applySidebarState);
+
+function updateSidebarButtons() {
+  const collapsed = state.sidebarCollapsed;
+  if (elements.sidebarToggle) {
+    elements.sidebarToggle.textContent = collapsed ? "展开" : "折叠";
+  }
+  if (elements.sidebarToggleMobile) {
+    elements.sidebarToggleMobile.textContent = collapsed ? "打开会话栏" : "收起会话栏";
+  }
+}
+
+function applySidebarState() {
+  const mobile = isMobileViewport();
+  if (elements.sidebar) {
+    elements.sidebar.classList.toggle("collapsed", state.sidebarCollapsed && !mobile);
+    elements.sidebar.classList.toggle("mobile-open", mobile && !state.sidebarCollapsed);
+  }
+  if (elements.mobileSidebarBackdrop) {
+    elements.mobileSidebarBackdrop.classList.toggle("hidden", !mobile || state.sidebarCollapsed);
+  }
+  document.body.classList.toggle("drawer-open", mobile && !state.sidebarCollapsed);
+  localStorage.setItem("cloud-agent-sidebar-collapsed", state.sidebarCollapsed ? "1" : "0");
+  updateSidebarButtons();
+}
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {

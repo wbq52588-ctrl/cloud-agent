@@ -21,12 +21,20 @@ const modelOptions = {
     { value: "glm-4.7", label: "GLM-4.7" },
     { value: "glm-4.5-air", label: "GLM-4.5 Air" },
   ],
+  vps: [
+    { value: "vps-status", label: "服务状态" },
+    { value: "vps-run", label: "立即运行任务" },
+    { value: "vps-logs", label: "查看日志" },
+    { value: "vps-timer", label: "定时计划" },
+    { value: "vps-branch", label: "仓库分支" },
+  ],
 };
 
 const modelDefaults = {
   gemini: "gemini-2.5-flash",
   openai: "gpt-4.1-mini",
   zhipu: "glm-4.7",
+  vps: "vps-status",
 };
 
 const elements = {

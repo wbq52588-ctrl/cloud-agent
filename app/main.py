@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.provider_runner import run_with_retry
 from app.providers.gemini_provider import run_gemini_agent
 from app.providers.openai_provider import run_openai_agent
+from app.providers.vps_provider import run_vps_agent
 from app.providers.zhipu_provider import run_zhipu_agent
 from app.schemas import (
     AgentRunRequest,
@@ -92,7 +93,9 @@ async def run_agent(
     settings = get_settings()
 
     try:
-        if request.provider == "openai":
+        if request.provider == "vps":
+            model, output_text = await run_vps_agent(request)
+        elif request.provider == "openai":
             model, output_text = await run_with_retry(
                 lambda: run_openai_agent(request, settings),
                 settings,
@@ -165,7 +168,19 @@ async def chat_session(
     settings = get_settings()
 
     try:
-        if request.provider == "openai":
+        if request.provider == "vps":
+            model, output_text = await run_vps_agent(
+                AgentRunRequest(
+                    provider=request.provider,
+                    model=request.model,
+                    system_prompt=request.system_prompt,
+                    messages=messages,
+                    attachments=request.attachments,
+                    temperature=request.temperature,
+                    max_output_tokens=request.max_output_tokens,
+                )
+            )
+        elif request.provider == "openai":
             model, output_text = await run_with_retry(
                 lambda: run_openai_agent(
                     AgentRunRequest(

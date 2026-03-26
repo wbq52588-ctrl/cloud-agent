@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 
-Provider = Literal["openai", "gemini", "zhipu"]
+Provider = Literal["openai", "gemini", "zhipu", "vps"]
 Role = Literal["system", "user", "assistant"]
 AttachmentKind = Literal["image", "text"]
 

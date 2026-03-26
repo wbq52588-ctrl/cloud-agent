@@ -74,6 +74,8 @@ const modelDescriptions = {
 const elements = {
   sessionList: document.getElementById("session-list"),
   messageList: document.getElementById("message-list"),
+  transcriptShell: document.querySelector(".transcript-shell"),
+  chatPanel: document.querySelector(".chat-panel"),
   chatTitle: document.getElementById("chat-title"),
   provider: document.getElementById("provider"),
   model: document.getElementById("model"),
@@ -865,6 +867,17 @@ function bindEvents() {
   elements.modelSheetToggle?.addEventListener("click", () => openSheet("model"));
   elements.advancedSheetToggle?.addEventListener("click", () => openSheet("advanced"));
   elements.sheetBackdrop?.addEventListener("click", closeAllSheets);
+  [elements.messageList, elements.transcriptShell, elements.chatPanel].forEach((element) => {
+    element?.addEventListener("click", (event) => {
+      if (!state.openSheet) {
+        return;
+      }
+      if (event.target.closest(".composer") || event.target.closest(".bottom-sheet") || event.target.closest(".mobile-toolbar")) {
+        return;
+      }
+      closeAllSheets();
+    });
+  });
   document.querySelectorAll("[data-close-sheet]").forEach((button) => {
     button.addEventListener("click", closeAllSheets);
   });

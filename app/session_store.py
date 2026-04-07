@@ -9,6 +9,9 @@ from uuid import uuid4
 from app.schemas import ChatMessage, SessionDetail, SessionSummary
 
 
+NEW_SESSION_TITLE = "新会话"
+
+
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -16,7 +19,7 @@ def _now_iso() -> str:
 def _summarize_title(text: str) -> str:
     cleaned = " ".join(text.strip().split())
     if not cleaned:
-        return "新会话"
+        return NEW_SESSION_TITLE
     return cleaned[:28] + ("..." if len(cleaned) > 28 else "")
 
 
@@ -27,6 +30,13 @@ class SessionStore:
         self._sessions: dict[str, SessionDetail] = {}
         self._store_path.parent.mkdir(parents=True, exist_ok=True)
         self._load()
+
+    def _sorted_sessions(self) -> list[SessionDetail]:
+        return sorted(
+            self._sessions.values(),
+            key=lambda session: session.updated_at,
+            reverse=True,
+        )
 
     def _load(self) -> None:
         if not self._store_path.exists():
@@ -39,18 +49,20 @@ class SessionStore:
         }
 
     def _save(self) -> None:
-        payload = [session.model_dump() for session in self._sessions.values()]
-        self._store_path.write_text(
+        payload = [session.model_dump() for session in self._sorted_sessions()]
+        temp_path = self._store_path.with_suffix(f"{self._store_path.suffix}.tmp")
+        temp_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        temp_path.replace(self._store_path)
 
     def create_session(self, title: str | None = None) -> SessionDetail:
         with self._lock:
             session_id = uuid4().hex
             session = SessionDetail(
                 session_id=session_id,
-                title=title or "新会话",
+                title=(title or "").strip() or NEW_SESSION_TITLE,
                 provider=None,
                 model=None,
                 updated_at=_now_iso(),
@@ -60,15 +72,10 @@ class SessionStore:
             )
             self._sessions[session_id] = session
             self._save()
-            return session
+            return SessionDetail.model_validate(session.model_dump())
 
     def list_sessions(self) -> list[SessionSummary]:
         with self._lock:
-            sessions = sorted(
-                self._sessions.values(),
-                key=lambda session: session.updated_at,
-                reverse=True,
-            )
             return [
                 SessionSummary(
                     session_id=session.session_id,
@@ -78,7 +85,7 @@ class SessionStore:
                     updated_at=session.updated_at,
                     message_count=session.message_count,
                 )
-                for session in sessions
+                for session in self._sorted_sessions()
             ]
 
     def get_session(self, session_id: str) -> SessionDetail | None:
@@ -110,7 +117,7 @@ class SessionStore:
             if session is None:
                 return None
 
-            if session.title == "新会话":
+            if session.title == NEW_SESSION_TITLE:
                 session.title = _summarize_title(user_message)
 
             session.system_prompt = system_prompt

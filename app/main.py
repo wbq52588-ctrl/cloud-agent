@@ -2,13 +2,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException
 
+from app.agent_service import build_turn_agent_request, execute_agent_request
 from app.attachment_utils import build_user_message_text
 from app.config import get_settings
-from app.provider_runner import run_with_retry
-from app.providers.gemini_provider import run_gemini_agent
-from app.providers.openai_provider import run_openai_agent
-from app.providers.vps_provider import run_vps_agent
-from app.providers.zhipu_provider import run_zhipu_agent
 from app.schemas import (
     AgentRunRequest,
     AgentRunResponse,
@@ -41,29 +37,6 @@ def require_access(x_access_password: str | None = Header(default=None)) -> None
         raise HTTPException(status_code=401, detail="访问口令无效，请先登录")
 
 
-def format_provider_error(exc: Exception) -> str:
-    message = str(exc)
-    lowered = message.lower()
-
-    if "insufficient_quota" in lowered:
-        return "OpenAI API 额度不足，请检查 billing 或充值后重试"
-    if "timed out" in lowered:
-        return "模型响应超时了，请稍后重试一次"
-    if "resource_exhausted" in lowered:
-        return "Gemini 当前模型额度不足，请稍后重试或切换到其他 Gemini 模型"
-    if "api key was reported as leaked" in lowered:
-        return "Gemini API Key 已被判定泄露，请更换新的 Key"
-    if "missing zhipu_api_key" in lowered:
-        return "服务端未配置 ZHIPU_API_KEY"
-    if "permission_denied" in lowered:
-        return "模型服务拒绝了这次请求，请检查 API Key 权限"
-    if "missing openai_api_key" in lowered:
-        return "服务端未配置 OPENAI_API_KEY"
-    if "missing gemini_api_key" in lowered:
-        return "服务端未配置 GEMINI_API_KEY"
-
-    return f"Agent run failed: {exc}"
-
 @app.get("/health")
 async def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
@@ -81,31 +54,7 @@ async def run_agent(
     x_access_password: str | None = Header(default=None),
 ) -> AgentRunResponse:
     require_access(x_access_password)
-    settings = get_settings()
-
-    try:
-        if request.provider == "vps":
-            model, output_text = await run_vps_agent(request)
-        elif request.provider == "openai":
-            model, output_text = await run_with_retry(
-                lambda: run_openai_agent(request, settings),
-                settings,
-            )
-        elif request.provider == "zhipu":
-            model, output_text = await run_with_retry(
-                lambda: run_zhipu_agent(request, settings),
-                settings,
-            )
-        else:
-            model, output_text = await run_with_retry(
-                lambda: run_gemini_agent(request, settings),
-                settings,
-            )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=format_provider_error(exc)) from exc
-
+    model, output_text = await execute_agent_request(request, get_settings())
     return AgentRunResponse(
         provider=request.provider,
         model=model,
@@ -163,82 +112,21 @@ async def chat_session(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    composed_user_message = build_user_message_text(request.user_message, request.attachments)
+    user_content = build_user_message_text(request.user_message, request.attachments)
+    normalized_user_message = user_content or request.user_message or "[Uploaded content]"
     messages = [
         *session.messages,
-        ChatMessage(role="user", content=composed_user_message or request.user_message or "[Uploaded content]"),
+        ChatMessage(role="user", content=normalized_user_message),
     ]
-    settings = get_settings()
 
-    try:
-        if request.provider == "vps":
-            model, output_text = await run_vps_agent(
-                AgentRunRequest(
-                    provider=request.provider,
-                    model=request.model,
-                    system_prompt=request.system_prompt,
-                    messages=messages,
-                    attachments=request.attachments,
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_output_tokens,
-                )
-            )
-        elif request.provider == "openai":
-            model, output_text = await run_with_retry(
-                lambda: run_openai_agent(
-                    AgentRunRequest(
-                        provider=request.provider,
-                        model=request.model,
-                        system_prompt=request.system_prompt,
-                        messages=messages,
-                        attachments=request.attachments,
-                        temperature=request.temperature,
-                        max_output_tokens=request.max_output_tokens,
-                    ),
-                    settings,
-                ),
-                settings,
-            )
-        elif request.provider == "zhipu":
-            model, output_text = await run_with_retry(
-                lambda: run_zhipu_agent(
-                    AgentRunRequest(
-                        provider=request.provider,
-                        model=request.model,
-                        system_prompt=request.system_prompt,
-                        messages=messages,
-                        attachments=request.attachments,
-                        temperature=request.temperature,
-                        max_output_tokens=request.max_output_tokens,
-                    ),
-                    settings,
-                ),
-                settings,
-            )
-        else:
-            model, output_text = await run_with_retry(
-                lambda: run_gemini_agent(
-                    AgentRunRequest(
-                        provider=request.provider,
-                        model=request.model,
-                        system_prompt=request.system_prompt,
-                        messages=messages,
-                        attachments=request.attachments,
-                        temperature=request.temperature,
-                        max_output_tokens=request.max_output_tokens,
-                    ),
-                    settings,
-                ),
-                settings,
-            )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=format_provider_error(exc)) from exc
+    model, output_text = await execute_agent_request(
+        build_turn_agent_request(messages, request),
+        get_settings(),
+    )
 
     updated_session = store.append_turn(
         session_id=session_id,
-        user_message=composed_user_message or request.user_message or "[Uploaded content]",
+        user_message=normalized_user_message,
         assistant_message=output_text,
         provider=request.provider,
         model=model,

@@ -67,7 +67,7 @@ class ChatTurnRequest(BaseModel):
     @model_validator(mode="after")
     def validate_payload(self) -> "ChatTurnRequest":
         if not self.user_message.strip() and not self.attachments:
-            raise ValueError("请输入消息或至少上传一个文件")
+            raise ValueError("请输入消息，或至少上传一个文件")
         return self
 
 

@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse
 
 from app.attachment_utils import build_user_message_text
 from app.config import get_settings
@@ -64,19 +63,6 @@ def format_provider_error(exc: Exception) -> str:
         return "服务端未配置 GEMINI_API_KEY"
 
     return f"Agent run failed: {exc}"
-
-
-@app.get("/")
-async def index() -> JSONResponse:
-    return JSONResponse(
-        {
-            "name": "cloud-agent-api",
-            "frontend": "cloudflare-worker",
-            "health": "/health",
-            "api_prefix": "/v1",
-        }
-    )
-
 
 @app.get("/health")
 async def healthcheck() -> dict[str, str]:

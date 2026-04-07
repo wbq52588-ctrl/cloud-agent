@@ -154,7 +154,7 @@ Worker 侧：
 - `public/index.html`
 - `public/static/*`
 
-VPS FastAPI 现在是 API-only，不再提供前端页面。前端修改只应落在：
+VPS FastAPI 现在只保留 `/health` 和 `/v1/*`，不再提供 `/` 首页或静态前端。前端修改只应落在：
 
 - `public/index.html`
 - `public/static/*`

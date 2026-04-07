@@ -3013,6 +3013,15 @@ textarea {
     padding: 0 56px;
     min-height: 42px;
     font-size: 0.94rem;
+    gap: 8px;
+  }
+
+  .chat-header .mobile-topbar-mark {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex: 0 0 18px;
+    vertical-align: middle;
   }
 }
 
@@ -3038,5 +3047,12 @@ textarea {
     min-height: 38px;
     padding: 0 48px;
     font-size: 0.88rem;
+    gap: 6px;
+  }
+
+  .chat-header .mobile-topbar-mark {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
   }
 }

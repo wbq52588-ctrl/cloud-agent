@@ -8,8 +8,6 @@
 
 - FastAPI 后端
   - `app/main.py`
-  - `app/static/`
-  - `app/templates/`
 - Cloudflare Worker 前端/会话层
   - `src/worker.js`
   - `public/`
@@ -162,4 +160,4 @@ Worker 侧：
 - `public/index.html`
 - `public/static/*`
 
-现在 FastAPI 和 Worker 已经共用 `public/` 作为运行时前端入口。`app/static/*` 和 `app/templates/index.html` 仍保留在仓库里，属于待清理的历史文件。
+现在 FastAPI 和 Worker 共用 `public/` 作为唯一前端入口。后续前端修改只应落在 `public/` 与 `src/worker.js`。

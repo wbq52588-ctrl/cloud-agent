@@ -2853,3 +2853,126 @@ textarea {
     display: none !important;
   }
 }
+
+@media (max-width: 960px) {
+  .chat-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .chat-header-main {
+    position: relative;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 56px;
+    align-items: start;
+    gap: 10px;
+    padding-top: 2px;
+  }
+
+  .desktop-provider-chip,
+  .desktop-chat-title {
+    display: none !important;
+  }
+
+  .chat-header .mobile-topbar {
+    display: grid !important;
+    grid-column: 1 / -1;
+    grid-template-columns: 52px minmax(0, 1fr) 56px;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .chat-header #sidebar-toggle-mobile,
+  .chat-header .mobile-nav-button {
+    display: inline-flex !important;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    align-self: center;
+    margin: 0;
+  }
+
+  .chat-header .mobile-topbar-title {
+    display: flex !important;
+    grid-column: 2;
+    grid-row: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .chat-header .avatar-menu-shell {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    margin: 0;
+    z-index: 45;
+  }
+
+  .chat-header .mobile-avatar {
+    display: inline-flex !important;
+    min-width: 48px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 18px;
+  }
+
+  .chat-header .avatar-menu {
+    right: 0;
+    left: auto;
+    top: calc(100% + 10px);
+  }
+
+  .chat-header .mobile-hero {
+    display: grid !important;
+    grid-column: 1 / -1;
+    gap: 8px;
+    padding: 10px 2px 6px;
+  }
+
+  .chat-header .mobile-hero h2 {
+    max-width: 12ch;
+  }
+}
+
+@media (max-width: 560px) {
+  .chat-header-main,
+  .chat-header .mobile-topbar {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    gap: 8px;
+  }
+
+  .chat-header #sidebar-toggle-mobile,
+  .chat-header .mobile-nav-button,
+  .chat-header .mobile-avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 16px;
+  }
+
+  .chat-header .mobile-topbar-title {
+    font-size: 0.95rem;
+  }
+
+  .chat-header .mobile-hero {
+    padding-top: 8px;
+  }
+
+  .chat-header .mobile-hero h2 {
+    font-size: clamp(1.45rem, 8vw, 2rem);
+    max-width: 10ch;
+  }
+}

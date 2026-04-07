@@ -24,7 +24,7 @@ FastAPI 负责：
 
 - 多模型调用
 - 附件处理
-- 直接复用 `public/` 提供页面与静态资源
+- API 服务
 - VPS 本地运行
 
 ## FastAPI 本地启动
@@ -154,10 +154,8 @@ Worker 侧：
 - `public/index.html`
 - `public/static/*`
 
-如果要改 VPS FastAPI 版本页面，改这里：
+VPS FastAPI 现在是 API-only，不再提供前端页面。前端修改只应落在：
 
-- `app/main.py`
 - `public/index.html`
 - `public/static/*`
-
-现在 FastAPI 和 Worker 共用 `public/` 作为唯一前端入口。后续前端修改只应落在 `public/` 与 `src/worker.js`。
+- `src/worker.js`

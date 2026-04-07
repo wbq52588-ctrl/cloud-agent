@@ -9,6 +9,33 @@ const DEFAULT_MODELS = {
 };
 
 const SUPPORTED_PROVIDERS = ["codex", "gemini"];
+const NEW_SESSION_TITLE = "新会话";
+const STREAM_STEPS = {
+  preparing: "已收到请求，正在准备会话",
+  callingModel: "正在调用模型",
+  routedToGemini: "Gemini 判断可以直接回答",
+  routedToCodex: "Gemini 建议交给 Codex 处理",
+  finalizing: "正在整理回复",
+  saving: "正在写入会话记录",
+};
+
+const CODEX_ROUTER_PROMPT = `You are a routing assistant for an AI workspace.
+
+Decide whether the user's latest request should be answered by Gemini directly or sent to Codex.
+
+Route to "codex" when the request is mainly about:
+- code, debugging, errors, stack traces
+- repositories, git, deployment, CI/CD
+- servers, VPS, logs, infrastructure, shell commands
+- frontend/backend implementation, styling fixes, file edits
+
+Route to "gemini" when the request is mainly about:
+- direct Q&A
+- brainstorming, writing, summarization, translation
+- general explanation without needing code or system changes
+
+Return strict JSON only:
+{"route":"gemini"|"codex","reason":"short reason"}`;
 
 function json(data, init = {}) {
   const headers = new Headers(init.headers || {});
@@ -32,7 +59,7 @@ function requireWecomUserId(request) {
   if (!userId) {
     throw new Response(
       JSON.stringify({ detail: "缺少企业微信身份，请从企业微信入口进入后再使用。" }),
-      { status: 401, headers: { "content-type": "application/json; charset=utf-8" } }
+      { status: 401, headers: { "content-type": "application/json; charset=utf-8" } },
     );
   }
   return userId;
@@ -52,7 +79,7 @@ function isoNow() {
 
 function summarizeTitle(text) {
   const cleaned = String(text || "").trim().replace(/\s+/g, " ");
-  return cleaned ? cleaned.slice(0, 28) + (cleaned.length > 28 ? "..." : "") : "新会话";
+  return cleaned ? cleaned.slice(0, 28) + (cleaned.length > 28 ? "..." : "") : NEW_SESSION_TITLE;
 }
 
 async function readSessionIndex(env, userId) {
@@ -64,11 +91,22 @@ async function writeSessionIndex(env, userId, sessions) {
   await env.SESSIONS.put(sessionIndexKey(userId), JSON.stringify(sessions));
 }
 
+function toSessionSummary(session) {
+  return {
+    session_id: session.session_id,
+    title: session.title,
+    provider: session.provider,
+    model: session.model,
+    updated_at: session.updated_at,
+    message_count: session.message_count,
+  };
+}
+
 async function createSessionRecord(env, userId, title = null) {
   const sessionId = crypto.randomUUID().replaceAll("-", "");
   const session = {
     session_id: sessionId,
-    title: title || "新会话",
+    title: String(title || "").trim() || NEW_SESSION_TITLE,
     provider: null,
     model: null,
     updated_at: isoNow(),
@@ -78,35 +116,19 @@ async function createSessionRecord(env, userId, title = null) {
   };
   await env.SESSIONS.put(sessionKey(userId, sessionId), JSON.stringify(session));
   const sessions = await readSessionIndex(env, userId);
-  sessions.unshift({
-    session_id: session.session_id,
-    title: session.title,
-    provider: session.provider,
-    model: session.model,
-    updated_at: session.updated_at,
-    message_count: session.message_count,
-  });
+  sessions.unshift(toSessionSummary(session));
   await writeSessionIndex(env, userId, sessions);
   return session;
 }
 
 async function getSessionRecord(env, userId, sessionId) {
-  const raw = await env.SESSIONS.get(sessionKey(userId, sessionId), "json");
-  return raw || null;
+  return (await env.SESSIONS.get(sessionKey(userId, sessionId), "json")) || null;
 }
 
 async function saveSessionRecord(env, userId, session) {
   await env.SESSIONS.put(sessionKey(userId, session.session_id), JSON.stringify(session));
   const sessions = await readSessionIndex(env, userId);
-  const summary = {
-    session_id: session.session_id,
-    title: session.title,
-    provider: session.provider,
-    model: session.model,
-    updated_at: session.updated_at,
-    message_count: session.message_count,
-  };
-  const next = [summary, ...sessions.filter((item) => item.session_id !== session.session_id)]
+  const next = [toSessionSummary(session), ...sessions.filter((item) => item.session_id !== session.session_id)]
     .sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
   await writeSessionIndex(env, userId, next);
 }
@@ -117,7 +139,7 @@ async function deleteSessionRecord(env, userId, sessionId) {
   await writeSessionIndex(
     env,
     userId,
-    sessions.filter((item) => item.session_id !== sessionId)
+    sessions.filter((item) => item.session_id !== sessionId),
   );
 }
 
@@ -193,9 +215,7 @@ async function runGemini(env, payload) {
       },
       body: JSON.stringify({
         systemInstruction: payload.systemPrompt
-          ? {
-              parts: [{ text: String(payload.systemPrompt) }],
-            }
+          ? { parts: [{ text: String(payload.systemPrompt) }] }
           : undefined,
         contents: toGeminiContents(payload.messages, payload.userMessage),
         generationConfig: {
@@ -203,7 +223,7 @@ async function runGemini(env, payload) {
           maxOutputTokens: payload.max_output_tokens ?? payload.maxOutputTokens ?? 800,
         },
       }),
-    }
+    },
   );
   const text = await response.text();
   if (!response.ok) {
@@ -225,24 +245,6 @@ async function runGemini(env, payload) {
     output_text: outputText,
   };
 }
-
-const CODEX_ROUTER_PROMPT = `You are a routing assistant for an AI workspace.
-
-Decide whether the user's latest request should be answered by Gemini directly or sent to Codex.
-
-Route to "codex" when the request is mainly about:
-- code, debugging, errors, stack traces
-- repositories, git, deployment, CI/CD
-- servers, VPS, logs, infrastructure, shell commands
-- frontend/backend implementation, styling fixes, file edits
-
-Route to "gemini" when the request is mainly about:
-- direct Q&A
-- brainstorming, writing, summarization, translation
-- general explanation without needing code or system changes
-
-Return strict JSON only:
-{"route":"gemini"|"codex","reason":"short reason"}`;
 
 function extractJsonObject(text) {
   const raw = String(text || "").trim();
@@ -304,17 +306,16 @@ async function decideCodexRoute(env, payload) {
       route: parsed?.route === "codex" ? "codex" : "gemini",
       reason: String(parsed?.reason || "").trim() || heuristic.reason,
     };
-  } catch (_error) {
+  } catch {
     return heuristic;
   }
 }
 
 async function routeCodexWithGemini(env, payload, onProgress = async () => {}) {
-  await onProgress("Gemini 正在理解需求");
   const decision = await decideCodexRoute(env, payload);
 
   if (decision.route === "gemini") {
-    await onProgress("Gemini 判断可以直接回答");
+    await onProgress(STREAM_STEPS.routedToGemini);
     const result = await runGemini(env, {
       ...payload,
       provider: "gemini",
@@ -328,7 +329,7 @@ async function routeCodexWithGemini(env, payload, onProgress = async () => {}) {
     };
   }
 
-  await onProgress("Gemini 建议交给 Codex 处理");
+  await onProgress(STREAM_STEPS.routedToCodex);
   const routingNote = decision.reason ? `Routing hint from Gemini: ${decision.reason}` : "";
   const result = await runCodex(env, {
     ...payload,
@@ -379,6 +380,37 @@ async function runProvider(env, payload) {
   return runBackend(env, payload);
 }
 
+function buildProviderPayload(body, messages, userMessage) {
+  const provider = body.provider || "codex";
+  return {
+    provider,
+    model: body.model || DEFAULT_MODELS[provider] || null,
+    systemPrompt: body.system_prompt || null,
+    messages: Array.isArray(messages) ? messages : [],
+    userMessage,
+    attachments: Array.isArray(body.attachments) ? body.attachments : [],
+    temperature: body.temperature ?? 0.2,
+    max_output_tokens: body.max_output_tokens ?? 800,
+  };
+}
+
+async function updateSessionAfterReply(env, userId, session, body, userMessage, result) {
+  if (session.title === NEW_SESSION_TITLE) {
+    session.title = summarizeTitle(userMessage);
+  }
+  session.provider = result.provider;
+  session.model = result.model;
+  session.system_prompt = body.system_prompt || null;
+  session.messages = [
+    ...(session.messages || []),
+    { role: "user", content: userMessage },
+    { role: "assistant", content: result.output_text },
+  ];
+  session.message_count = session.messages.length;
+  session.updated_at = isoNow();
+  await saveSessionRecord(env, userId, session);
+}
+
 async function handlePublicConfig(request) {
   return json({
     requires_password: false,
@@ -417,82 +449,8 @@ function sseEvent(name, data) {
   return encoder.encode(`event: ${name}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
-async function handleChatStream(request, env, sessionId) {
-  const userId = requireWecomUserId(request);
-  const session = await getSessionRecord(env, userId, sessionId);
-  if (!session) {
-    return json({ detail: "Session not found" }, { status: 404 });
-  }
-
-  const body = await request.json();
-  const userMessage = String(body.user_message || "").trim();
-  if (!userMessage) {
-    return json({ detail: "请输入消息" }, { status: 400 });
-  }
-
-  const stream = new TransformStream();
-  const writer = stream.writable.getWriter();
-
-  (async () => {
-    try {
-      await writer.write(sseEvent("progress", { step: "已收到请求，正在准备会话" }));
-      await new Promise((resolve) => setTimeout(resolve, 160));
-      await writer.write(sseEvent("progress", { step: "正在调用模型" }));
-
-      const result = await runProvider(env, {
-        provider: body.provider || "codex",
-        model: body.model || DEFAULT_MODELS[body.provider || "codex"] || null,
-        systemPrompt: body.system_prompt || null,
-        messages: Array.isArray(session.messages) ? session.messages : [],
-        userMessage,
-        attachments: Array.isArray(body.attachments) ? body.attachments : [],
-        temperature: body.temperature ?? 0.2,
-        max_output_tokens: body.max_output_tokens ?? 800,
-      });
-
-      await writer.write(sseEvent("progress", { step: "正在整理回复" }));
-      await new Promise((resolve) => setTimeout(resolve, 180));
-
-      if (session.title === "新会话") {
-        session.title = summarizeTitle(userMessage);
-      }
-      session.provider = result.provider;
-      session.model = result.model;
-      session.system_prompt = body.system_prompt || null;
-      session.messages = [
-        ...(session.messages || []),
-        { role: "user", content: userMessage },
-        { role: "assistant", content: result.output_text },
-      ];
-      session.message_count = session.messages.length;
-      session.updated_at = isoNow();
-      await saveSessionRecord(env, userId, session);
-
-      await writer.write(sseEvent("progress", { step: "正在写入会话记录" }));
-      await new Promise((resolve) => setTimeout(resolve, 180));
-      await writer.write(sseEvent("final", { session }));
-    } catch (error) {
-      await writer.write(
-        sseEvent("error", {
-          detail: error instanceof Error ? error.message : String(error),
-        })
-      );
-    } finally {
-      await writer.close();
-    }
-  })();
-
-  return new Response(stream.readable, {
-    headers: {
-      "content-type": "text/event-stream; charset=utf-8",
-      "cache-control": "no-cache, no-transform",
-      connection: "keep-alive",
-    },
-  });
-}
-
 async function handleChat(request, env, sessionId) {
-  const response = await handleChatStreamV2(request, env, sessionId);
+  const response = await handleChatStream(request, env, sessionId);
   if (!String(response.headers.get("content-type") || "").includes("text/event-stream")) {
     return response;
   }
@@ -526,7 +484,7 @@ async function handleChat(request, env, sessionId) {
     : json({ detail: "没有收到最终会话结果" }, { status: 500 });
 }
 
-async function handleChatStreamV2(request, env, sessionId) {
+async function handleChatStream(request, env, sessionId) {
   const userId = requireWecomUserId(request);
   const session = await getSessionRecord(env, userId, sessionId);
   if (!session) {
@@ -536,7 +494,7 @@ async function handleChatStreamV2(request, env, sessionId) {
   const body = await request.json();
   const userMessage = String(body.user_message || "").trim();
   if (!userMessage) {
-    return json({ detail: "Please enter a message." }, { status: 400 });
+    return json({ detail: "请输入消息。" }, { status: 400 });
   }
 
   const stream = new TransformStream();
@@ -544,70 +502,35 @@ async function handleChatStreamV2(request, env, sessionId) {
 
   (async () => {
     try {
-      await writer.write(sseEvent("progress", { step: "已收到请求，正在准备会话" }));
+      await writer.write(sseEvent("progress", { step: STREAM_STEPS.preparing }));
       await new Promise((resolve) => setTimeout(resolve, 160));
 
-      const provider = body.provider || "codex";
+      const payload = buildProviderPayload(body, session.messages, userMessage);
       let result;
 
-      if (provider === "codex") {
-        result = await routeCodexWithGemini(
-          env,
-          {
-            provider,
-            model: body.model || DEFAULT_MODELS[provider] || null,
-            systemPrompt: body.system_prompt || null,
-            messages: Array.isArray(session.messages) ? session.messages : [],
-            userMessage,
-            attachments: Array.isArray(body.attachments) ? body.attachments : [],
-            temperature: body.temperature ?? 0.2,
-            max_output_tokens: body.max_output_tokens ?? 800,
-          },
-          async (step) => {
-            await writer.write(sseEvent("progress", { step }));
-            await new Promise((resolve) => setTimeout(resolve, 180));
-          }
-        );
-      } else {
-        await writer.write(sseEvent("progress", { step: "正在调用模型" }));
-        result = await runProvider(env, {
-          provider,
-          model: body.model || DEFAULT_MODELS[provider] || null,
-          systemPrompt: body.system_prompt || null,
-          messages: Array.isArray(session.messages) ? session.messages : [],
-          userMessage,
-          attachments: Array.isArray(body.attachments) ? body.attachments : [],
-          temperature: body.temperature ?? 0.2,
-          max_output_tokens: body.max_output_tokens ?? 800,
+      if (payload.provider === "codex") {
+        result = await routeCodexWithGemini(env, payload, async (step) => {
+          await writer.write(sseEvent("progress", { step }));
+          await new Promise((resolve) => setTimeout(resolve, 180));
         });
+      } else {
+        await writer.write(sseEvent("progress", { step: STREAM_STEPS.callingModel }));
+        result = await runProvider(env, payload);
       }
 
-      await writer.write(sseEvent("progress", { step: "正在整理回复" }));
+      await writer.write(sseEvent("progress", { step: STREAM_STEPS.finalizing }));
       await new Promise((resolve) => setTimeout(resolve, 180));
 
-      if (session.title === "新会话") {
-        session.title = summarizeTitle(userMessage);
-      }
-      session.provider = result.provider;
-      session.model = result.model;
-      session.system_prompt = body.system_prompt || null;
-      session.messages = [
-        ...(session.messages || []),
-        { role: "user", content: userMessage },
-        { role: "assistant", content: result.output_text },
-      ];
-      session.message_count = session.messages.length;
-      session.updated_at = isoNow();
-      await saveSessionRecord(env, userId, session);
+      await updateSessionAfterReply(env, userId, session, body, userMessage, result);
 
-      await writer.write(sseEvent("progress", { step: "正在写入会话记录" }));
+      await writer.write(sseEvent("progress", { step: STREAM_STEPS.saving }));
       await new Promise((resolve) => setTimeout(resolve, 180));
       await writer.write(sseEvent("final", { session }));
     } catch (error) {
       await writer.write(
         sseEvent("error", {
           detail: error instanceof Error ? error.message : String(error),
-        })
+        }),
       );
     } finally {
       await writer.close();
@@ -656,6 +579,7 @@ async function handleRequest(request, env) {
     const session = await getSessionRecord(env, userId, sessionMatch[1]);
     return session ? json(session) : json({ detail: "Session not found" }, { status: 404 });
   }
+
   if (sessionMatch && request.method === "DELETE") {
     const userId = requireWecomUserId(request);
     await deleteSessionRecord(env, userId, sessionMatch[1]);
@@ -669,7 +593,7 @@ async function handleRequest(request, env) {
 
   const chatStreamMatch = path.match(/^\/v1\/sessions\/([^/]+)\/chat\/stream$/);
   if (chatStreamMatch && request.method === "POST") {
-    return handleChatStreamV2(request, env, chatStreamMatch[1]);
+    return handleChatStream(request, env, chatStreamMatch[1]);
   }
 
   return env.ASSETS.fetch(request);
@@ -683,7 +607,7 @@ export default {
       if (error instanceof Response) return error;
       return json(
         { detail: error instanceof Error ? error.message : String(error) },
-        { status: 500 }
+        { status: 500 },
       );
     }
   },

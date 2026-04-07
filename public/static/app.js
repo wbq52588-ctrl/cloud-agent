@@ -1285,6 +1285,16 @@ function bindEvents() {
       }
       elements.userMessage.focus();
     });
+
+    element?.addEventListener("touchend", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      event.preventDefault();
+      elements.userMessage.focus();
+      const len = elements.userMessage.value.length;
+      elements.userMessage.setSelectionRange(len, len);
+    }, { passive: false });
   });
 
   elements.desktopAttachmentTrigger?.addEventListener("click", () => {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
     <title>Codex Workspace</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260328au" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260402a" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -78,28 +78,32 @@
         </button>
         <header class="chat-header">
           <div class="chat-header-main">
-            <div class="desktop-header-copy">
-              <p class="eyebrow">Codex</p>
-              <h2 id="chat-title">Codex</h2>
-              <p class="header-note">一个更自然、更稳定的中文助手界面。</p>
+            <div class="desktop-provider-chip">
+              <span class="empty-title-mark" aria-hidden="true"></span>
+              <span class="desktop-provider-name">Codex</span>
+            </div>
+
+            <h2 id="chat-title" class="desktop-chat-title">Codex</h2>
+
+            <div class="avatar-menu-shell">
+              <button id="avatar-menu-toggle" type="button" class="mobile-avatar" aria-label="当前账号菜单">AI</button>
+              <div id="avatar-menu" class="avatar-menu hidden" aria-hidden="true">
+                <div id="current-user-card" class="avatar-menu-user hidden">
+                  <span class="avatar-menu-user-label">当前用户</span>
+                  <strong id="current-user-id">未识别</strong>
+                </div>
+                <button id="logout-button" type="button" class="avatar-menu-item">退出登录</button>
+              </div>
             </div>
 
             <div class="mobile-topbar">
               <button id="sidebar-toggle-mobile" type="button" class="icon-button mobile-nav-button" aria-label="打开会话栏">
-                <span class="mobile-nav-icon empty-title-mark" aria-hidden="true"></span>
+                <span class="mobile-nav-line" aria-hidden="true"></span>
+                <span class="mobile-nav-line" aria-hidden="true"></span>
+                <span class="mobile-nav-line" aria-hidden="true"></span>
               </button>
               <div class="mobile-topbar-title">
                 <span id="mobile-provider-title">Codex</span>
-              </div>
-              <div class="avatar-menu-shell">
-                <button id="avatar-menu-toggle" type="button" class="mobile-avatar" aria-label="当前账号菜单">AI</button>
-                <div id="avatar-menu" class="avatar-menu hidden" aria-hidden="true">
-                  <div id="current-user-card" class="avatar-menu-user hidden">
-                    <span class="avatar-menu-user-label">当前用户</span>
-                    <strong id="current-user-id">未识别</strong>
-                  </div>
-                  <button id="logout-button" type="button" class="avatar-menu-item">退出登录</button>
-                </div>
               </div>
             </div>
 
@@ -191,7 +195,7 @@
       </div>
     </div>
 
-    <script src="/static/app.js?v=20260328ah"></script>
+    <script src="/static/app.js?v=20260402a"></script>
   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e5770468d43d811',t:'MTc3NTA0NDg4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4a6eeb06c7e14347b675c9ce260a5a97","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

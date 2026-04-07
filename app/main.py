@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
@@ -24,6 +25,12 @@ from app.schemas import (
 from app.session_store import SessionStore
 
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+PUBLIC_DIR = BASE_DIR / "public"
+PUBLIC_STATIC_DIR = PUBLIC_DIR / "static"
+PUBLIC_INDEX_FILE = PUBLIC_DIR / "index.html"
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     get_settings()
@@ -32,7 +39,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Multi Model Agent", lifespan=lifespan)
 store = SessionStore(get_settings().session_store_path)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", StaticFiles(directory=str(PUBLIC_STATIC_DIR)), name="static")
 
 
 def require_access(x_access_password: str | None = Header(default=None)) -> None:
@@ -70,7 +77,7 @@ def format_provider_error(exc: Exception) -> str:
 
 @app.get("/", response_class=FileResponse)
 async def index() -> FileResponse:
-    return FileResponse("app/templates/index.html")
+    return FileResponse(str(PUBLIC_INDEX_FILE))
 
 
 @app.get("/health")

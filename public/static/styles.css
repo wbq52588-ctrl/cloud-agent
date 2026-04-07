@@ -2423,172 +2423,6 @@ textarea {
   }
 }
 
-@media (max-width: 960px) {
-  .mobile-topbar {
-    grid-template-columns: 44px minmax(0, 1fr) 60px;
-    gap: 10px;
-  }
-
-  .mobile-nav-button {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    border-radius: 18px;
-    border: 1px solid rgba(191, 174, 149, 0.24);
-    background:
-      linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(247, 239, 229, 0.94));
-    box-shadow:
-      0 10px 24px rgba(84, 63, 37, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.94);
-    backdrop-filter: none;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 5px;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .mobile-nav-button .mobile-nav-line {
-    display: block !important;
-    width: 18px;
-    height: 2px;
-    flex: 0 0 2px;
-    border-radius: 999px;
-    background: #7e6b56 !important;
-    opacity: 1 !important;
-    transform: none !important;
-    margin: 0 auto;
-  }
-
-  .composer {
-    left: 12px;
-    right: 12px;
-    width: auto;
-    max-width: none;
-    transform: none;
-    padding: 2px 0 calc(4px + env(safe-area-inset-bottom));
-  }
-
-  body:not(.has-conversation) .composer,
-  body.has-conversation .composer {
-    left: 12px;
-    right: 12px;
-    width: auto;
-    transform: none;
-  }
-
-  .mobile-composer-shell {
-    width: 100%;
-  }
-
-  .mobile-input-shell {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    border-radius: 24px;
-    overflow: hidden;
-  }
-
-  .mobile-text-entry,
-  body.has-conversation .mobile-text-entry {
-    flex: 1 1 auto;
-    min-width: 0;
-    min-height: 48px;
-  }
-
-  .mobile-text-entry textarea,
-  body.has-conversation .mobile-text-entry textarea {
-    min-height: 48px;
-    max-height: 132px;
-    padding: 10px 2px;
-    font-size: 16px;
-    line-height: 1.45;
-  }
-
-  .round-send-button {
-    flex: 0 0 52px;
-    min-width: 52px;
-    width: 52px;
-    height: 52px;
-    padding: 0;
-    border-radius: 16px;
-    justify-self: auto;
-    align-self: center;
-    margin: 0;
-    box-shadow:
-      0 10px 22px rgba(17, 94, 89, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  }
-
-  .send-label {
-    display: none !important;
-  }
-
-  .send-glyph {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 14px;
-    height: 14px;
-    border-top: 2px solid rgba(255, 255, 255, 0.98);
-    border-right: 2px solid rgba(255, 255, 255, 0.98);
-    transform: translate(-58%, -50%) rotate(45deg);
-  }
-
-  .send-glyph::after {
-    content: "";
-    position: absolute;
-    left: -1px;
-    top: 8px;
-    width: 11px;
-    height: 2px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.98);
-    transform: rotate(-45deg);
-    transform-origin: left center;
-  }
-
-  .round-send-button.is-generating {
-    background: linear-gradient(180deg, #86563e, #6e4331);
-    box-shadow:
-      0 12px 26px rgba(110, 67, 49, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-
-  .round-send-button.is-generating .send-glyph {
-    width: 14px;
-    height: 14px;
-    border: none;
-    transform: translate(-50%, -50%);
-  }
-
-  .round-send-button.is-generating .send-glyph::before,
-  .round-send-button.is-generating .send-glyph::after {
-    content: "";
-    position: absolute;
-    top: 1px;
-    width: 4px;
-    height: 12px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.98);
-    transform: none;
-  }
-
-  .round-send-button.is-generating .send-glyph::before {
-    left: 2px;
-  }
-
-  .round-send-button.is-generating .send-glyph::after {
-    right: 2px;
-    left: auto;
-  }
-}
-
 @media (min-width: 961px) {
   .brand-top {
     display: grid !important;
@@ -2667,10 +2501,30 @@ textarea {
 }
 
 @media (max-width: 960px) {
+  .mobile-sidebar-backdrop {
+    z-index: 69;
+  }
+
+  .sidebar {
+    width: min(92vw, 360px);
+    max-width: 92vw;
+    z-index: 70;
+    box-shadow: 0 24px 64px rgba(32, 23, 13, 0.22);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  body.drawer-open .chat-header {
+    z-index: 20;
+  }
+
   .chat-header {
     position: sticky;
     top: 0;
     z-index: 40;
+    padding: calc(6px + env(safe-area-inset-top)) 12px 2px;
   }
 
   .chat-header-main {
@@ -2679,7 +2533,8 @@ textarea {
     grid-template-columns: 52px minmax(0, 1fr) 56px;
     align-items: start;
     gap: 10px;
-    padding-top: 2px;
+    min-height: 44px;
+    padding-top: 0;
   }
 
   .desktop-provider-chip,
@@ -2692,19 +2547,50 @@ textarea {
     grid-column: 1 / -1;
     grid-template-columns: 52px minmax(0, 1fr) 56px;
     align-items: center;
-    gap: 10px;
-    min-height: 48px;
+    gap: 0;
+    min-height: 42px;
     width: 100%;
   }
 
   .chat-header #sidebar-toggle-mobile,
   .chat-header .mobile-nav-button {
     display: inline-flex !important;
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
-    align-self: center;
+    position: absolute;
+    left: 0;
+    top: 0;
     margin: 0;
+  }
+
+  .mobile-nav-button {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 18px;
+    border: 1px solid rgba(191, 174, 149, 0.24);
+    background: linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(247, 239, 229, 0.94));
+    box-shadow:
+      0 10px 24px rgba(84, 63, 37, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94);
+    backdrop-filter: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .mobile-nav-button .mobile-nav-line {
+    display: block !important;
+    width: 18px;
+    height: 2px;
+    flex: 0 0 2px;
+    border-radius: 999px;
+    background: #7e6b56 !important;
+    opacity: 1 !important;
+    transform: none !important;
+    margin: 0 auto;
   }
 
   .chat-header .mobile-topbar-title {
@@ -2714,22 +2600,24 @@ textarea {
     align-items: center;
     justify-content: center;
     min-width: 0;
+    min-height: 42px;
+    padding: 0 56px;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.94rem;
     font-weight: 700;
     line-height: 1.1;
+    gap: 8px;
+    overflow: visible;
   }
 
   .chat-header .avatar-menu-shell {
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    align-self: center;
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
     margin: 0;
     z-index: 45;
+    justify-self: auto;
+    align-self: auto;
   }
 
   .chat-header .mobile-avatar {
@@ -2757,95 +2645,71 @@ textarea {
   .chat-header .mobile-hero h2 {
     max-width: 12ch;
   }
-}
 
-@media (max-width: 560px) {
-  .chat-header-main,
-  .chat-header .mobile-topbar {
-    grid-template-columns: 48px minmax(0, 1fr) 48px;
-    gap: 8px;
+  .composer {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding: 2px 0 calc(4px + env(safe-area-inset-bottom));
   }
 
-  .chat-header #sidebar-toggle-mobile,
-  .chat-header .mobile-nav-button,
-  .chat-header .mobile-avatar {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
+  body:not(.has-conversation) .composer,
+  body.has-conversation .composer {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    transform: none;
+  }
+
+  .mobile-composer-shell {
+    width: 100%;
+  }
+
+  .mobile-input-shell {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  .mobile-text-entry,
+  body.has-conversation .mobile-text-entry {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 48px;
+  }
+
+  .mobile-text-entry textarea,
+  body.has-conversation .mobile-text-entry textarea {
+    min-height: 48px;
+    max-height: 132px;
+    padding: 10px 2px;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .round-send-button {
+    flex: 0 0 52px;
+    min-width: 52px;
+    width: 52px;
+    height: 52px;
+    padding: 0;
     border-radius: 16px;
-  }
-
-  .chat-header .mobile-topbar-title {
-    font-size: 0.95rem;
-  }
-
-  .chat-header .mobile-hero {
-    padding-top: 8px;
-  }
-
-  .chat-header .mobile-hero h2 {
-    font-size: clamp(1.45rem, 8vw, 2rem);
-    max-width: 10ch;
-  }
-}
-
-@media (max-width: 960px) {
-  .mobile-sidebar-backdrop {
-    z-index: 69;
-  }
-
-  .sidebar {
-    width: min(92vw, 360px);
-    max-width: 92vw;
-    z-index: 70;
-    box-shadow: 0 24px 64px rgba(32, 23, 13, 0.22);
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0) !important;
-  }
-
-  body.drawer-open .chat-header {
-    z-index: 20;
-  }
-
-  .chat-header {
-    padding: calc(6px + env(safe-area-inset-top)) 12px 2px;
-  }
-
-  .chat-header-main {
-    min-height: 44px;
-    padding-top: 0;
-  }
-
-  .chat-header .mobile-topbar {
-    min-height: 42px;
-    gap: 0;
-  }
-
-  .chat-header #sidebar-toggle-mobile,
-  .chat-header .mobile-nav-button {
-    position: absolute;
-    left: 0;
-    top: 0;
     justify-self: auto;
-    align-self: auto;
+    align-self: center;
+    margin: 0;
+    box-shadow:
+      0 10px 22px rgba(17, 94, 89, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
 
-  .chat-header .avatar-menu-shell {
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
-    justify-self: auto;
-    align-self: auto;
-  }
-
-  .chat-header .mobile-topbar-title {
-    padding: 0 56px;
-    min-height: 42px;
-    font-size: 0.94rem;
-    gap: 8px;
-    overflow: visible;
+  .send-label {
+    display: none !important;
   }
 
   .chat-header .mobile-topbar-mark {
@@ -2895,6 +2759,12 @@ textarea {
     padding: calc(4px + env(safe-area-inset-top)) 10px 1px;
   }
 
+  .chat-header-main,
+  .chat-header .mobile-topbar {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    gap: 8px;
+  }
+
   .chat-header-main {
     min-height: 40px;
   }
@@ -2913,7 +2783,6 @@ textarea {
     padding: 0 48px;
     font-size: 0.88rem;
     gap: 6px;
-    overflow: visible;
   }
 
   .chat-header .mobile-topbar-mark {
@@ -2922,13 +2791,13 @@ textarea {
     flex: 0 0 16px;
   }
 
-  .chat-header .mobile-topbar-mark::before {
-    inset: 3px;
+  .chat-header .mobile-hero {
+    padding-top: 8px;
   }
 
-  .chat-header .mobile-topbar-mark::after {
-    width: 4px;
-    height: 4px;
+  .chat-header .mobile-hero h2 {
+    font-size: clamp(1.45rem, 8vw, 2rem);
+    max-width: 10ch;
   }
 }
 

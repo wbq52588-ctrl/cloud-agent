@@ -88,6 +88,12 @@ cd /opt/cloud-agent
 npx wrangler deploy
 ```
 
+或者直接调用仓库脚本：
+
+```bash
+./scripts/deploy-worker.sh
+```
+
 当前 Worker 依赖这些绑定：
 
 - `SESSIONS` KV namespace
@@ -97,6 +103,28 @@ npx wrangler deploy
 - `CODEX_BRIDGE_URL`
 - `GEMINI_API_KEY`
 - `WECOM_WEBHOOK_URL`
+
+## GitHub Actions 自动发版
+
+仓库已带：
+
+- `.github/workflows/deploy-worker.yml`
+
+触发条件：
+
+- `main` 分支上涉及 `src/**`、`public/**`、`wrangler.jsonc` 的提交
+- 手动 `workflow_dispatch`
+
+要让自动发版生效，只需要在 GitHub 仓库 Secrets 里配置：
+
+- `CLOUDFLARE_API_TOKEN`
+
+这个 Token 需要至少具备：
+
+- Workers write
+- Workers KV write
+- Pages write（可选）
+- Account read
 
 ## 主要环境变量
 

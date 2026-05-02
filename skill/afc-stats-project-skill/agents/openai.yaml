@@ -1,0 +1,3 @@
+display_name: AFC Stats Project
+short_description: AFC检修六工班班组综合看板项目接手指南。
+default_prompt: 使用 afc-stats-project skill 接手这个 AFC 班组综合看板项目，先阅读项目地图和相关业务规则，再根据我的需求修改、验证并部署。

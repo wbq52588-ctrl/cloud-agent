@@ -123,6 +123,7 @@ async def _run_tool_loop(
                 "role": "assistant",
                 "content": message.content or None,
                 "tool_calls": tc_dicts,
+                "reasoning_content": reasoning or None,
             })
 
             # 2. Execute tools and append results AFTER the assistant message.

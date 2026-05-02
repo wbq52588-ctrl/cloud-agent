@@ -89,6 +89,7 @@ const elements = {
   systemPromptMobile: document.getElementById("system-prompt-mobile"),
   userMessage: document.getElementById("user-message"),
   statusTextDesktop: document.getElementById("status-text"),
+  statusTextMobile: document.getElementById("status-text-mobile"),
   chatForm: document.getElementById("chat-form"),
   authOverlay: document.getElementById("auth-overlay"),
   accessPassword: document.getElementById("access-password"),
@@ -248,6 +249,7 @@ function renderProviderOptions() {
 
 function setStatus(text) {
   if (elements.statusTextDesktop) elements.statusTextDesktop.textContent = text;
+  if (elements.statusTextMobile) elements.statusTextMobile.textContent = text;
 }
 
 function syncMessagePlaceholder() {
@@ -406,6 +408,7 @@ function renderAttachments() {
   if (!elements.attachmentList) return;
   if (!state.attachments.length) {
     elements.attachmentList.innerHTML = "";
+    elements.attachmentList.classList.add("hidden");
     return;
   }
 
@@ -419,6 +422,8 @@ function renderAttachments() {
       `,
     )
     .join("");
+
+  elements.attachmentList.classList.remove("hidden");
 
   document.querySelectorAll("[data-remove-attachment]").forEach((button) => {
     button.addEventListener("click", () => {

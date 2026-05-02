@@ -59,6 +59,12 @@ body {
   display: block;
 }
 
+.composer-status-line {
+  display: none;
+  padding: 8px 0 0;
+  text-align: center;
+}
+
 .sheet-backdrop,
 .mobile-sidebar-backdrop {
   position: fixed;
@@ -984,6 +990,10 @@ details[open] > .thinking-summary .thinking-caret {
   .controls,
   .desktop-header-copy {
     display: none !important;
+  }
+
+  .composer-status-line {
+    display: block;
   }
 
   .mobile-sidebar-backdrop {

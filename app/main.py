@@ -15,6 +15,7 @@ from app.agent_service import build_turn_agent_request, execute_agent_request, f
 from app.attachment_utils import build_user_message_text
 from app.config import get_settings
 from app.external_context import close_http_client
+from app.mcp_client import close_mcp_client
 from app.logging_config import correlation_id, new_correlation_id, setup_logging
 from app.rate_limit import make_rate_limit_dependency
 from app.schemas import (
@@ -40,6 +41,7 @@ async def lifespan(_: FastAPI):
     get_settings()
     yield
     await close_http_client()
+    await close_mcp_client()
 
 
 app = FastAPI(title="DeepSeek Workspace", lifespan=lifespan)
@@ -220,7 +222,7 @@ async def chat_session(
     ]
 
     model, output_text, reasoning_text = await execute_agent_request(
-        build_turn_agent_request(messages, request),
+        build_turn_agent_request(messages, request, actor_wecom_userid=x_wecom_userid),
         get_settings(),
     )
 
@@ -259,7 +261,9 @@ async def chat_session_stream(
         ChatMessage(role="user", content=normalized_user_message),
     ]
 
-    agent_request = build_turn_agent_request(messages, request)
+    agent_request = build_turn_agent_request(
+        messages, request, actor_wecom_userid=x_wecom_userid,
+    )
     settings = get_settings()
 
     agent_request = await prepare_agent_request(agent_request)
@@ -281,6 +285,10 @@ async def chat_session_stream(
                 elif chunk_type == "content":
                     collected_content.append(chunk_text)
                     yield f"event: progress\ndata: {json.dumps({'content': chunk_text})}\n\n"
+                elif chunk_type == "tool_start":
+                    yield f"event: tool_start\ndata: {chunk_text}\n\n"
+                elif chunk_type == "tool_end":
+                    yield f"event: tool_end\ndata: {chunk_text}\n\n"
 
             full_text = "".join(collected_content)
             full_reasoning = "".join(collected_reasoning) if collected_reasoning else None

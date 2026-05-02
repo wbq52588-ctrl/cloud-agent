@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "afc-ops": {
+      "type": "url",
+      "url": "https://afcmcp.819521.xyz/mcp",
+      "headers": {
+        "Authorization": "Bearer 6c9e2f4a8b7d1c53e0f6a94b2d7c8e1f5a3b6c9d0e2f4a7b8c1d3e5f7a9b2c4"
+      }
+    }
+  }
+}

@@ -39,6 +39,7 @@ def build_agent_request(
     attachments,
     temperature: float | None,
     max_output_tokens: int | None,
+    actor_wecom_userid: str | None = None,
 ) -> AgentRunRequest:
     return AgentRunRequest(
         provider=provider,
@@ -48,10 +49,16 @@ def build_agent_request(
         attachments=attachments,
         temperature=temperature,
         max_output_tokens=max_output_tokens,
+        actor_wecom_userid=actor_wecom_userid,
     )
 
 
-def build_turn_agent_request(messages, request: ChatTurnRequest) -> AgentRunRequest:
+def build_turn_agent_request(
+    messages,
+    request: ChatTurnRequest,
+    *,
+    actor_wecom_userid: str | None = None,
+) -> AgentRunRequest:
     return build_agent_request(
         provider=request.provider,
         model=request.model,
@@ -60,6 +67,7 @@ def build_turn_agent_request(messages, request: ChatTurnRequest) -> AgentRunRequ
         attachments=request.attachments,
         temperature=request.temperature,
         max_output_tokens=request.max_output_tokens,
+        actor_wecom_userid=actor_wecom_userid,
     )
 
 
@@ -80,7 +88,7 @@ async def execute_agent_request(
 
 
 async def prepare_agent_request(request: AgentRunRequest) -> AgentRunRequest:
-    """Add live context, coding style guidance, and optional skills to a request."""
+    """Add live context, wecom identity, coding style guidance, and optional skills."""
     external_context = await build_external_context(request.system_prompt, request.messages)
     system_prompt = request.system_prompt
     if external_context:
@@ -88,6 +96,19 @@ async def prepare_agent_request(request: AgentRunRequest) -> AgentRunRequest:
             f"{external_context}\n\n---\n\n{system_prompt}"
             if system_prompt
             else external_context
+        )
+
+    # Inject actor_wecom_userid so the model knows what value to use for MCP tool calls.
+    if request.actor_wecom_userid:
+        identity_note = (
+            f"当前操作用户的企业微信 userid 为: {request.actor_wecom_userid}。"
+            f"调用 AFC MCP 工具（afc_* 系列）时，必须使用此值作为 actor_wecom_userid 参数，"
+            f"不得编造或使用其他值。"
+        )
+        system_prompt = (
+            f"{identity_note}\n\n{system_prompt}"
+            if system_prompt
+            else identity_note
         )
 
     request = request.model_copy(

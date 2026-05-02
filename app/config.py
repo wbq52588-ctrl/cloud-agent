@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     provider_timeout_seconds: float = 45.0
     provider_max_retries: int = 1
     provider_retry_base_delay: float = 1.2
+    mcp_remote_api_key: str | None = None
     cors_origins: list[str] = ["*"]
 
     model_config = SettingsConfigDict(

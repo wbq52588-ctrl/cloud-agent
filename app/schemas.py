@@ -30,6 +30,7 @@ class AgentRunRequest(BaseModel):
     attachments: list[Attachment] = Field(default_factory=list)
     temperature: float | None = Field(default=0.2, ge=0, le=2)
     max_output_tokens: int | None = Field(default=4096, ge=1, le=32768)
+    actor_wecom_userid: str | None = None
 
 
 class AgentRunResponse(BaseModel):

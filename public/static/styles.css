@@ -730,6 +730,100 @@ textarea {
   }
 }
 
+/* ── Thinking / Reasoning Section ── */
+.thinking-section {
+  margin-bottom: 16px;
+  border: 1px solid rgba(177, 162, 139, 0.24);
+  border-radius: 14px;
+  background: rgba(240, 235, 225, 0.54);
+  overflow: hidden;
+}
+
+.thinking-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a7c6d;
+  letter-spacing: 0.04em;
+  list-style: none;
+}
+
+.thinking-summary::-webkit-details-marker {
+  display: none;
+}
+
+.thinking-caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #8a7c6d;
+  transition: transform 180ms ease;
+  flex-shrink: 0;
+}
+
+details[open] > .thinking-summary .thinking-caret {
+  transform: rotate(-180deg);
+}
+
+.thinking-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.thinking-content {
+  padding: 0 14px 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #6b6055;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.thinking-content p {
+  margin: 0 0 8px;
+}
+
+.thinking-content p:last-child {
+  margin-bottom: 0;
+}
+
+.thinking-content code {
+  font-size: 12px;
+  background: rgba(108, 90, 66, 0.08);
+}
+
+.thinking-content pre {
+  background: rgba(108, 90, 66, 0.06);
+  border: 1px solid rgba(177, 162, 139, 0.12);
+  font-size: 12px;
+  padding: 10px 12px;
+  color: #5d4f42;
+}
+
+/* Thinking wave inside summary (during streaming) */
+.thinking-summary .thinking-wave {
+  margin-left: 6px;
+}
+
+/* Pending state thinking section */
+.message.pending .thinking-section {
+  border-style: dashed;
+}
+
+/* Response content wrapper */
+.response-content {
+  /* ensures thinking section and response are visually separated */
+}
+
 .composer {
   display: grid;
   gap: 12px;
@@ -1355,6 +1449,16 @@ textarea {
     width: 6px;
     height: 6px;
     background: rgba(117, 108, 95, 0.58);
+  }
+
+  /* Mobile thinking-section overrides */
+  .thinking-section {
+    margin-bottom: 12px;
+  }
+
+  .thinking-content {
+    font-size: 14px;
+    max-height: 240px;
   }
 
   .composer {
@@ -2151,6 +2255,13 @@ textarea {
     color: #2f271f;
     border-radius: 7px;
     padding: 2px 7px;
+  }
+
+  /* Desktop thinking-section overrides */
+  .thinking-content {
+    font-size: 14px;
+    line-height: 1.75;
+    max-height: 360px;
   }
 
   .composer {

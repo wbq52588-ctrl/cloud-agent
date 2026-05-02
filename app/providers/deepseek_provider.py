@@ -49,7 +49,7 @@ def _to_deepseek_messages(system_prompt: str | None, messages: list[ChatMessage]
     return payload
 
 
-async def run_deepseek_agent(request: AgentRunRequest, settings: Settings) -> tuple[str, str]:
+async def run_deepseek_agent(request: AgentRunRequest, settings: Settings) -> tuple[str, str, str]:
     if not settings.deepseek_api_key:
         raise ValueError("Missing DEEPSEEK_API_KEY")
 
@@ -71,12 +71,20 @@ async def run_deepseek_agent(request: AgentRunRequest, settings: Settings) -> tu
 
     response = await client.chat.completions.create(**payload)
 
-    output_text = response.choices[0].message.content or ""
-    return model, output_text
+    message = response.choices[0].message
+    output_text = message.content or ""
+    reasoning_text = getattr(message, "reasoning_content", None) or ""
+    return model, output_text, reasoning_text
 
 
 async def run_deepseek_agent_stream(request: AgentRunRequest, settings: Settings):
-    """Stream DeepSeek response chunks as they arrive."""
+    """Stream DeepSeek response chunks as they arrive.
+
+    Yields (type, text) tuples:
+      - ("reasoning", text) — thinking/reasoning content (deepseek-v4-pro only)
+      - ("content", text)   — visible assistant response text
+      - ("done", "")        — stream complete
+    """
     if not settings.deepseek_api_key:
         raise ValueError("Missing DEEPSEEK_API_KEY")
 
@@ -101,7 +109,12 @@ async def run_deepseek_agent_stream(request: AgentRunRequest, settings: Settings
     stream = await client.chat.completions.create(**payload)
 
     async for chunk in stream:
-        if chunk.choices and chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
+        if chunk.choices and chunk.choices[0].delta:
+            delta = chunk.choices[0].delta
+            reasoning = getattr(delta, "reasoning_content", None)
+            if reasoning:
+                yield ("reasoning", reasoning)
+            if delta.content:
+                yield ("content", delta.content)
 
-    yield "[DONE]"
+    yield ("done", "")

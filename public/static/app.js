@@ -621,6 +621,21 @@ function renderSessions() {
 }
 
 function _messageHtml(message, index) {
+  const hasThinking = message.reasoning_content && message.reasoning_content.trim();
+
+  let thinkingHtml = "";
+  if (hasThinking) {
+    thinkingHtml = `
+      <details class="thinking-section">
+        <summary class="thinking-summary">
+          <span class="thinking-caret" aria-hidden="true"></span>
+          <span class="thinking-label">推理过程</span>
+        </summary>
+        <div class="thinking-content">${formatContent(message.reasoning_content)}</div>
+      </details>
+    `;
+  }
+
   return `
     <article class="message-row ${message.role} ${message.pending ? "pending" : ""}">
       <article class="message ${message.role} ${message.pending ? "pending" : ""}">
@@ -628,7 +643,12 @@ function _messageHtml(message, index) {
           <span class="message-role">${message.role === "user" ? "你" : message.pending ? "思考中" : "助手"}</span>
           ${message.pending ? "" : `<button type="button" class="ghost-button message-copy-button" data-copy-index="${index}">复制</button>`}
         </div>
-        <div class="message-content">${message.pending ? `<div class="thinking-line" aria-label="${escapeHtml(message.content)}"><span class="thinking-wave" aria-hidden="true"><span></span><span></span><span></span></span><span class="thinking-label">${escapeHtml(message.content)}</span></div>` : formatContent(message.content)}</div>
+        <div class="message-content">
+          ${message.pending
+            ? `<div class="thinking-line" aria-label="${escapeHtml(message.content)}"><span class="thinking-wave" aria-hidden="true"><span></span><span></span><span></span></span><span class="thinking-label">${escapeHtml(message.content)}</span></div>`
+            : `${thinkingHtml}<div class="response-content">${formatContent(message.content)}</div>`
+          }
+        </div>
       </article>
     </article>
   `;
@@ -901,7 +921,11 @@ async function fetchEventStream(url, options = {}, handlers = {}) {
         }
       }
 
-      if (eventName === "progress" && handlers.onProgress) {
+      if (eventName === "thinking" && handlers.onThinking) {
+        handlers.onThinking(payload);
+      } else if (eventName === "model" && handlers.onModel) {
+        handlers.onModel(payload);
+      } else if (eventName === "progress" && handlers.onProgress) {
         handlers.onProgress(payload);
       } else if (eventName === "final" && handlers.onFinal) {
         handlers.onFinal(payload);
@@ -1060,6 +1084,7 @@ async function submitTurn(event) {
   renderMessages(state.activeMessages);
   setStatus("正在生成回复…");
 
+  let streamedThinking = "";
   let streamedContent = "";
   const pendingEl = _insertPendingMessage("正在输入中");
 
@@ -1085,12 +1110,25 @@ async function submitTurn(event) {
         signal: state.abortController.signal,
       },
       {
+        onThinking: (payload) => {
+          if (payload && payload.content) {
+            streamedThinking += payload.content;
+            if (pendingEl) {
+              const thinkingDiv = pendingEl.querySelector(".thinking-content");
+              if (thinkingDiv) {
+                thinkingDiv.textContent = streamedThinking;
+              }
+            }
+          }
+        },
         onProgress: (payload) => {
           if (payload && payload.content) {
             streamedContent += payload.content;
             if (pendingEl) {
-              pendingEl.querySelector(".message-content").innerHTML =
-                formatContent(streamedContent);
+              const responseDiv = pendingEl.querySelector(".response-content");
+              if (responseDiv) {
+                responseDiv.innerHTML = formatContent(streamedContent);
+              }
             }
             elements.messageList.scrollTop = elements.messageList.scrollHeight;
           }
@@ -1098,16 +1136,14 @@ async function submitTurn(event) {
         onFinal: async () => {
           removePending();
           if (streamedContent) {
-            state._renderedCount += 1; // account for the assistant message we'll add
-            state.activeMessages = [
-              ...state.activeMessages,
-              { role: "assistant", content: streamedContent },
-            ];
-            // Render just the final assistant message.
-            const finalHtml = _messageHtml(
-              { role: "assistant", content: streamedContent },
-              state.activeMessages.length - 1,
-            );
+            state._renderedCount += 1;
+            const msg = {
+              role: "assistant",
+              content: streamedContent,
+              reasoning_content: streamedThinking || null,
+            };
+            state.activeMessages = [...state.activeMessages, msg];
+            const finalHtml = _messageHtml(msg, state.activeMessages.length - 1);
             elements.messageList.insertAdjacentHTML("beforeend", finalHtml);
           }
           stopPendingProgress();
@@ -1154,7 +1190,19 @@ function _insertPendingMessage(placeholder) {
         <div class="message-toolbar">
           <span class="message-role">思考中</span>
         </div>
-        <div class="message-content">${escapeHtml(placeholder)}</div>
+        <div class="message-content">
+          <details class="thinking-section" open>
+            <summary class="thinking-summary">
+              <span class="thinking-caret" aria-hidden="true"></span>
+              <span class="thinking-label">推理过程</span>
+              <span class="thinking-wave" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </span>
+            </summary>
+            <div class="thinking-content"></div>
+          </details>
+          <div class="response-content">${escapeHtml(placeholder)}</div>
+        </div>
       </article>
     </article>
   `;

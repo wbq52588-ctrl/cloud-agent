@@ -11,6 +11,7 @@ AttachmentKind = Literal["image", "text"]
 class ChatMessage(BaseModel):
     role: Role
     content: str = Field(min_length=1)
+    reasoning_content: str | None = None
 
 
 class Attachment(BaseModel):
@@ -35,6 +36,7 @@ class AgentRunResponse(BaseModel):
     provider: Provider
     model: str
     output_text: str
+    reasoning_text: str | None = None
 
 
 class SessionCreateRequest(BaseModel):

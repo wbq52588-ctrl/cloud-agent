@@ -41,9 +41,9 @@ def _is_retryable(exc: Exception) -> bool:
 
 
 async def run_with_retry(
-    operation: Callable[[], Awaitable[tuple[str, str]]],
+    operation: Callable[[], Awaitable[tuple[str, str, str]]],
     settings: Settings,
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     last_error: Exception | None = None
     max_attempts = settings.provider_max_retries + 1
 

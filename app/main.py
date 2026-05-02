@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.agent_service import build_turn_agent_request, execute_agent_request
+from app.agent_service import build_turn_agent_request, execute_agent_request, prepare_agent_request
 from app.attachment_utils import build_user_message_text
 from app.config import get_settings
 from app.logging_config import correlation_id, new_correlation_id, setup_logging
@@ -141,11 +141,12 @@ async def run_agent(
     _rate_limit: None = Depends(_rate_limit_chat),
 ) -> AgentRunResponse:
     require_access(x_access_password)
-    model, output_text = await execute_agent_request(request, get_settings())
+    model, output_text, reasoning_text = await execute_agent_request(request, get_settings())
     return AgentRunResponse(
         provider=request.provider,
         model=model,
         output_text=output_text,
+        reasoning_text=reasoning_text or None,
     )
 
 
@@ -215,7 +216,7 @@ async def chat_session(
         ChatMessage(role="user", content=normalized_user_message),
     ]
 
-    model, output_text = await execute_agent_request(
+    model, output_text, reasoning_text = await execute_agent_request(
         build_turn_agent_request(messages, request),
         get_settings(),
     )
@@ -224,6 +225,7 @@ async def chat_session(
         session_id=session_id,
         user_message=normalized_user_message,
         assistant_message=output_text,
+        reasoning_content=reasoning_text or None,
         provider=request.provider,
         model=model,
         system_prompt=request.system_prompt,
@@ -257,49 +259,39 @@ async def chat_session_stream(
     agent_request = build_turn_agent_request(messages, request)
     settings = get_settings()
 
-    # Build enriched system prompt (external context + claude decorator + skill)
-    from app.agent_service import execute_agent_request
-    from app.claude_code_decorator import apply_claude_code_decorator
-    from app.external_context import build_external_context
-    from app.skill_loader import build_system_prompt_with_skills
-
-    external_ctx = await build_external_context(agent_request.system_prompt, agent_request.messages)
-    sp = agent_request.system_prompt
-    if external_ctx:
-        sp = f"{external_ctx}\n\n---\n\n{sp}" if sp else external_ctx
-    agent_request = agent_request.model_copy(
-        update={
-            "system_prompt": build_system_prompt_with_skills(
-                apply_claude_code_decorator(sp, agent_request.messages),
-                agent_request.messages,
-            )
-        }
-    )
+    agent_request = await prepare_agent_request(agent_request)
 
     async def sse_generator():
-        collected: list[str] = []
+        collected_content: list[str] = []
+        collected_reasoning: list[str] = []
         model_used = agent_request.model or settings.default_deepseek_model
         try:
             # Send the model name first as an event.
             yield f"event: model\ndata: {json.dumps({'model': model_used})}\n\n"
 
-            async for chunk in run_deepseek_agent_stream(agent_request, settings):
-                if chunk == "[DONE]":
+            async for chunk_type, chunk_text in run_deepseek_agent_stream(agent_request, settings):
+                if chunk_type == "done":
                     break
-                collected.append(chunk)
-                yield f"data: {json.dumps({'content': chunk})}\n\n"
+                elif chunk_type == "reasoning":
+                    collected_reasoning.append(chunk_text)
+                    yield f"event: thinking\ndata: {json.dumps({'content': chunk_text})}\n\n"
+                elif chunk_type == "content":
+                    collected_content.append(chunk_text)
+                    yield f"event: progress\ndata: {json.dumps({'content': chunk_text})}\n\n"
 
-            full_text = "".join(collected)
+            full_text = "".join(collected_content)
+            full_reasoning = "".join(collected_reasoning) if collected_reasoning else None
             # Persist the completed turn.
             await store.append_turn(
                 session_id=session_id,
                 user_message=normalized_user_message,
                 assistant_message=full_text,
+                reasoning_content=full_reasoning,
                 provider=request.provider,
                 model=model_used,
                 system_prompt=request.system_prompt,
             )
-            yield f"event: done\ndata: {json.dumps({'session_id': session_id})}\n\n"
+            yield f"event: final\ndata: {json.dumps({'session_id': session_id})}\n\n"
 
         except Exception as exc:
             logger.error("SSE stream error: %s", repr(exc))

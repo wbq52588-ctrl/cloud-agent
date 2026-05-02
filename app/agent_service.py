@@ -66,7 +66,21 @@ def build_turn_agent_request(messages, request: ChatTurnRequest) -> AgentRunRequ
 async def execute_agent_request(
     request: AgentRunRequest,
     settings: Settings,
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
+    request = await prepare_agent_request(request)
+    try:
+        return await run_with_retry(lambda: run_deepseek_agent(request, settings), settings)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("AGENT_ERROR exc=%s traceback=%s", repr(exc), traceback.format_exc())
+        raise HTTPException(status_code=500, detail=format_provider_error(exc)) from exc
+
+
+async def prepare_agent_request(request: AgentRunRequest) -> AgentRunRequest:
+    """Add live context, coding style guidance, and optional skills to a request."""
     external_context = await build_external_context(request.system_prompt, request.messages)
     system_prompt = request.system_prompt
     if external_context:
@@ -84,12 +98,4 @@ async def execute_agent_request(
             )
         }
     )
-    try:
-        return await run_with_retry(lambda: run_deepseek_agent(request, settings), settings)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.error("AGENT_ERROR exc=%s traceback=%s", repr(exc), traceback.format_exc())
-        raise HTTPException(status_code=500, detail=format_provider_error(exc)) from exc
+    return request

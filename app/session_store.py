@@ -59,11 +59,19 @@ class SessionStore:
                     session_id  TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,
                     role        TEXT NOT NULL,
                     content     TEXT NOT NULL,
+                    reasoning_content TEXT,
                     created_at  TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS idx_messages_session
                     ON messages(session_id, id);
             """)
+            # Migration: add reasoning_content column for existing databases.
+            try:
+                await self._db.execute(
+                    "ALTER TABLE messages ADD COLUMN reasoning_content TEXT"
+                )
+            except aiosqlite.OperationalError:
+                pass  # Column already exists.
             await self._db.commit()
             return self._db
 
@@ -126,11 +134,11 @@ class SessionStore:
             return None
 
         msg_rows = await db.execute(
-            "SELECT role, content FROM messages WHERE session_id = ? ORDER BY id",
+            "SELECT role, content, reasoning_content FROM messages WHERE session_id = ? ORDER BY id",
             (session_id,),
         )
         messages = [
-            ChatMessage(role=row["role"], content=row["content"])
+            ChatMessage(role=row["role"], content=row["content"], reasoning_content=row["reasoning_content"])
             for row in await msg_rows.fetchall()
         ]
         return SessionDetail(
@@ -160,6 +168,7 @@ class SessionStore:
         provider: str,
         model: str,
         system_prompt: str | None,
+        reasoning_content: str | None = None,
     ) -> SessionDetail | None:
         db = await self._get_db()
         session_row = await (await db.execute(
@@ -187,8 +196,8 @@ class SessionStore:
             (session_id, "user", user_message, now),
         )
         await db.execute(
-            "INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
-            (session_id, "assistant", assistant_message, now),
+            "INSERT INTO messages (session_id, role, content, reasoning_content, created_at) VALUES (?, ?, ?, ?, ?)",
+            (session_id, "assistant", assistant_message, reasoning_content, now),
         )
         await db.commit()
 

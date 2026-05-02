@@ -88,6 +88,8 @@ async def _ensure_mcp_session() -> str | None:
 
 async def _mcp_call_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """Call a single MCP tool and return the result."""
+    global _mcp_session_id
+
     client = _get_mcp_http_client()
 
     # Ensure we have an MCP session.
@@ -107,23 +109,23 @@ async def _mcp_call_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str,
     if _mcp_session_id:
         headers["Mcp-Session-Id"] = _mcp_session_id
 
+    async def _do_post():
+        resp = await client.post(AFC_MCP_PATH, json=payload, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+
     try:
-        response = await client.post(AFC_MCP_PATH, json=payload, headers=headers)
-        response.raise_for_status()
-        result = response.json()
+        result = await _do_post()
 
         if "error" in result:
             error_msg = result["error"].get("message", str(result["error"]))
             # If session expired, reset and retry once.
             if "session" in error_msg.lower() and _mcp_session_id:
-                global _mcp_session_id
                 _mcp_session_id = None
                 await _ensure_mcp_session()
                 if _mcp_session_id:
                     headers["Mcp-Session-Id"] = _mcp_session_id
-                    response2 = await client.post(AFC_MCP_PATH, json=payload, headers=headers)
-                    response2.raise_for_status()
-                    result2 = response2.json()
+                    result2 = await _do_post()
                     if "error" in result2:
                         return {"error": result2["error"].get("message", str(result2["error"]))}
                     return result2.get("result", result2)

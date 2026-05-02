@@ -772,7 +772,7 @@ details[open] > .thinking-summary .thinking-caret {
   transform: rotate(-180deg);
 }
 
-.thinking-label {
+.thinking-section-label {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }

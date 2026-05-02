@@ -27,6 +27,13 @@ def _get_http_client() -> httpx.AsyncClient:
         _http_client = httpx.AsyncClient(base_url=AFC_STATS_BASE_URL, timeout=30.0)
     return _http_client
 
+
+async def close_http_client() -> None:
+    global _http_client
+    if _http_client is not None and not _http_client.is_closed:
+        await _http_client.aclose()
+        _http_client = None
+
 AFC_CONTEXT_KEYWORDS = (
     "afc",
     "stats",

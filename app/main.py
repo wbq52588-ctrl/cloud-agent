@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 import json
 import logging
@@ -10,9 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.agent_service import build_turn_agent_request, execute_agent_request, prepare_agent_request
+from app.agent_service import build_turn_agent_request, execute_agent_request, format_provider_error, prepare_agent_request
 from app.attachment_utils import build_user_message_text
 from app.config import get_settings
+from app.external_context import close_http_client
 from app.logging_config import correlation_id, new_correlation_id, setup_logging
 from app.rate_limit import make_rate_limit_dependency
 from app.schemas import (
@@ -37,6 +39,7 @@ async def lifespan(_: FastAPI):
     setup_logging()
     get_settings()
     yield
+    await close_http_client()
 
 
 app = FastAPI(title="DeepSeek Workspace", lifespan=lifespan)
@@ -293,9 +296,12 @@ async def chat_session_stream(
             )
             yield f"event: final\ndata: {json.dumps({'session_id': session_id})}\n\n"
 
+        except (GeneratorExit, asyncio.CancelledError):
+            raise
         except Exception as exc:
             logger.error("SSE stream error: %s", repr(exc))
-            yield f"event: error\ndata: {json.dumps({'detail': str(exc)})}\n\n"
+            detail = format_provider_error(exc)
+            yield f"event: error\ndata: {json.dumps({'detail': detail})}\n\n"
 
     return StreamingResponse(
         sse_generator(),

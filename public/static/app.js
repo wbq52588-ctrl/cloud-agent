@@ -148,6 +148,7 @@ function escapeHtml(text) {
 }
 
 function formatContent(text) {
+  if (!text) return "";
   const escaped = escapeHtml(text);
   const blocks = escaped.split("```");
   return blocks
@@ -629,7 +630,7 @@ function _messageHtml(message, index) {
       <details class="thinking-section">
         <summary class="thinking-summary">
           <span class="thinking-caret" aria-hidden="true"></span>
-          <span class="thinking-label">推理过程</span>
+          <span class="thinking-section-label">推理过程</span>
         </summary>
         <div class="thinking-content">${formatContent(message.reasoning_content)}</div>
       </details>
@@ -1008,7 +1009,7 @@ async function loadSession(sessionId) {
   try {
     const session = await fetchJson(`/v1/sessions/${sessionId}`);
     state.activeSessionId = sessionId;
-    state.activeMessages = session.messages;
+    state.activeMessages = normalizeSessionMessages(session.messages);
     elements.chatTitle.textContent = session.title;
     elements.provider.value = session.provider || state.defaultProvider;
     if (!availableProviders().includes(elements.provider.value)) {
@@ -1111,6 +1112,7 @@ async function submitTurn(event) {
       },
       {
         onThinking: (payload) => {
+          if (!state.abortController) return;
           if (payload && payload.content) {
             streamedThinking += payload.content;
             if (pendingEl) {
@@ -1122,6 +1124,7 @@ async function submitTurn(event) {
           }
         },
         onProgress: (payload) => {
+          if (!state.abortController) return;
           if (payload && payload.content) {
             streamedContent += payload.content;
             if (pendingEl) {
@@ -1134,6 +1137,7 @@ async function submitTurn(event) {
           }
         },
         onFinal: async () => {
+          if (!state.abortController) return;
           removePending();
           if (streamedContent) {
             state._renderedCount += 1;
@@ -1194,7 +1198,7 @@ function _insertPendingMessage(placeholder) {
           <details class="thinking-section" open>
             <summary class="thinking-summary">
               <span class="thinking-caret" aria-hidden="true"></span>
-              <span class="thinking-label">推理过程</span>
+              <span class="thinking-section-label">推理过程</span>
               <span class="thinking-wave" aria-hidden="true">
                 <span></span><span></span><span></span>
               </span>

@@ -67,8 +67,7 @@ async def run_with_retry(
             if attempt >= max_attempts - 1:
                 break
 
-            # Exponential backoff: 1.2s → 2.4s → 4.8s → 9.6s → cap at 10s.
-            delay = min(1.2 * (2 ** attempt), 10.0)
+            delay = min(settings.provider_retry_base_delay * (2 ** attempt), 10.0)
             logger.info(
                 "Provider call attempt %d/%d failed, retrying in %.1fs: %s",
                 attempt + 1,

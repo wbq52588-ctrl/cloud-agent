@@ -23,6 +23,6 @@ RUN useradd --create-home --shell /bin/bash appuser && \
 EXPOSE 10000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD-SHELL python -c "import urllib.request; urllib.request.urlopen('http://localhost:$${PORT:-10000}/health')"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:10000/health')"
 
 ENTRYPOINT ["/entrypoint.sh"]

@@ -135,7 +135,10 @@ async def _run_tool_loop(
             continue
 
         # No tool calls — this is the final response.
-        return message.content or "", all_reasoning, tools_called
+        content = message.content or ""
+        if not content.strip():
+            content = "（模型未返回文本响应，请重试。）"
+        return content, all_reasoning, tools_called
 
     # Max iterations reached.
     logger.warning("Tool loop exhausted after %d iterations", MAX_TOOL_ITERATIONS)

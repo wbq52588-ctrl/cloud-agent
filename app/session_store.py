@@ -137,10 +137,17 @@ class SessionStore:
             "SELECT role, content, reasoning_content FROM messages WHERE session_id = ? ORDER BY id",
             (session_id,),
         )
-        messages = [
-            ChatMessage(role=row["role"], content=row["content"], reasoning_content=row["reasoning_content"])
-            for row in await msg_rows.fetchall()
-        ]
+        def _safe_msg(row) -> ChatMessage:
+            content = row["content"] or ""
+            if not content.strip():
+                content = "（空消息）"
+            return ChatMessage(
+                role=row["role"],
+                content=content,
+                reasoning_content=row["reasoning_content"],
+            )
+
+        messages = [_safe_msg(row) for row in await msg_rows.fetchall()]
         return SessionDetail(
             session_id=session_row["session_id"],
             title=session_row["title"],
@@ -195,9 +202,10 @@ class SessionStore:
             "INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
             (session_id, "user", user_message, now),
         )
+        safe_assistant = assistant_message.strip() or "（无响应内容）"
         await db.execute(
             "INSERT INTO messages (session_id, role, content, reasoning_content, created_at) VALUES (?, ?, ?, ?, ?)",
-            (session_id, "assistant", assistant_message, reasoning_content, now),
+            (session_id, "assistant", safe_assistant, reasoning_content, now),
         )
         await db.commit()
 

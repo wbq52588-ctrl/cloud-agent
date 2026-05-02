@@ -36,6 +36,8 @@ SKILL_SUMMARY = """Installed skill summary:
 - Frontend: plain HTML/CSS/vanilla JavaScript ES modules.
 - Backend: Node.js + Express.
 - Remote data source: https://afcops.819521.xyz
+
+IMPORTANT: You CANNOT execute bash commands, read files, or access the local filesystem. You are a chat-only model without tool access. When the user asks about code, rules, or data, analyze from the provided external API context (afcstats.552588.xyz) and the knowledge already in the conversation. DO NOT output <bash> tags or try to run commands — they will appear as raw text to the user and cause confusion. Instead, explain what you know from the available context and tell the user clearly if you need them to check something on the server.
 """
 
 

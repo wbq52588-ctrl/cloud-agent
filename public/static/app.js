@@ -20,9 +20,9 @@
 };
 
 const DOCUMENT_ACCEPT =
-  "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh,text/plain,text/markdown,application/json,text/csv,text/html,text/css,application/xml,text/xml";
+  "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh,text/plain,text/markdown,application/json,text/csv,text/html,text/css,application/xml,text/xml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf";
 
-const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const TEXT_FILE_EXTENSIONS = new Set([
   "txt",
   "md",
@@ -52,6 +52,32 @@ const TEXT_CONTENT_TYPES = new Set([
   "application/xml",
   "text/xml",
 ]);
+
+const OFFICE_EXTENSIONS = new Set([
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "pdf",
+]);
+
+const OFFICE_CONTENT_TYPES = new Set([
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/pdf",
+]);
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
 
 const modelOptions = {
   deepseek: [
@@ -1302,17 +1328,24 @@ function isTextFile(file) {
   );
 }
 
+function isOfficeFile(file) {
+  return (
+    OFFICE_CONTENT_TYPES.has(file.type) ||
+    OFFICE_EXTENSIONS.has(getFileExtension(file.name))
+  );
+}
+
 function validateUploadFile(file) {
   if (file.type.startsWith("video/")) {
     return "暂不支持上传视频文件";
   }
   if (file.size > MAX_ATTACHMENT_BYTES) {
-    return "文件不能超过 2MB";
+    return `文件不能超过 ${formatFileSize(MAX_ATTACHMENT_BYTES)}`;
   }
-  if (file.type.startsWith("image/") || isTextFile(file)) {
+  if (file.type.startsWith("image/") || isTextFile(file) || isOfficeFile(file)) {
     return "";
   }
-  return "暂只支持图片和文本/代码类文件";
+  return "暂只支持图片、文本/代码、Office 及 PDF 文件";
 }
 
 async function handleFiles(files) {
@@ -1343,6 +1376,13 @@ async function handleFiles(files) {
           name: file.name,
           content_type: file.type || "text/plain",
           text_content: text,
+        });
+      } else if (isOfficeFile(file)) {
+        state.attachments.push({
+          kind: "text",
+          name: file.name,
+          content_type: file.type || "application/octet-stream",
+          text_content: `[Office 文件: ${file.name} (${file.type || "未知格式"}, ${formatFileSize(file.size)}) - 二进制格式，内容无法直接预览，请根据文件名和类型判断用途。]`,
         });
       }
     }

@@ -67,7 +67,7 @@ async def run_deepseek_agent(request: AgentRunRequest, settings: Settings) -> tu
         }
     else:
         payload["temperature"] = request.temperature
-        payload["max_tokens"] = request.max_output_tokens
+    payload["max_tokens"] = request.max_output_tokens
 
     response = await client.chat.completions.create(**payload)
 
@@ -104,7 +104,7 @@ async def run_deepseek_agent_stream(request: AgentRunRequest, settings: Settings
         }
     else:
         payload["temperature"] = request.temperature
-        payload["max_tokens"] = request.max_output_tokens
+    payload["max_tokens"] = request.max_output_tokens
 
     stream = await client.chat.completions.create(**payload)
 

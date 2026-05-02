@@ -240,14 +240,14 @@ function resolveWecomUserIdFromRuntime() {
 }
 
 function syncResolvedWecomUserId() {
-  const wecomUserId = resolveWecomUserIdFromRuntime();
-  state.currentWecomUserId = wecomUserId;
+  const resolved = resolveWecomUserIdFromRuntime();
+  const stored = localStorage.getItem("cloud-agent-wecom-userid") || "";
+  // Server-provided or URL-provided takes priority; fall back to stored.
+  state.currentWecomUserId = resolved || stored;
   state.activeSessionId = localStorage.getItem(userScopedStorageKey("active-session")) || null;
 
-  if (wecomUserId) {
-    localStorage.setItem("cloud-agent-wecom-userid", wecomUserId);
-  } else {
-    localStorage.removeItem("cloud-agent-wecom-userid");
+  if (state.currentWecomUserId) {
+    localStorage.setItem("cloud-agent-wecom-userid", state.currentWecomUserId);
   }
 }
 

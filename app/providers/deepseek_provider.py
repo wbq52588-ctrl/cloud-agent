@@ -96,8 +96,10 @@ async def _run_tool_loop(
 
         if message.tool_calls:
             tools_called = True
-            # Build the assistant tool_calls message.
+
+            # 1. Append the assistant message with tool_calls FIRST (API requirement).
             tc_dicts = []
+            tool_specs: list[dict] = []
             for tc in message.tool_calls:
                 tc_dicts.append({
                     "id": tc.id,
@@ -107,31 +109,39 @@ async def _run_tool_loop(
                         "arguments": tc.function.arguments,
                     },
                 })
-
-                if on_tool_start:
-                    on_tool_start(tc.function.name)
-
                 try:
                     arguments = json.loads(tc.function.arguments)
                 except json.JSONDecodeError:
                     arguments = {}
-                result_str = await execute_tool(tc.function.name, arguments)
-
-                ds_messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": result_str,
+                tool_specs.append({
+                    "id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": arguments,
                 })
-
-                if on_tool_end:
-                    preview = result_str[:200] + "…" if len(result_str) > 200 else result_str
-                    on_tool_end(tc.function.name, preview)
 
             ds_messages.append({
                 "role": "assistant",
                 "content": message.content or None,
                 "tool_calls": tc_dicts,
             })
+
+            # 2. Execute tools and append results AFTER the assistant message.
+            for spec in tool_specs:
+                if on_tool_start:
+                    on_tool_start(spec["name"])
+
+                result_str = await execute_tool(spec["name"], spec["arguments"])
+
+                ds_messages.append({
+                    "role": "tool",
+                    "tool_call_id": spec["id"],
+                    "content": result_str,
+                })
+
+                if on_tool_end:
+                    preview = result_str[:200] + "…" if len(result_str) > 200 else result_str
+                    on_tool_end(spec["name"], preview)
+
             continue
 
         # No tool calls — this is the final response.

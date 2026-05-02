@@ -11,9 +11,11 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-AFC_MCP_URL = "https://afcmcp.819521.xyz/mcp"
+AFC_MCP_BASE_URL = "https://afcmcp.819521.xyz"
+AFC_MCP_PATH = "/mcp"
 
 _client: httpx.AsyncClient | None = None
+_mcp_session_id: str | None = None
 
 
 def _get_mcp_http_client() -> httpx.AsyncClient:
@@ -22,7 +24,7 @@ def _get_mcp_http_client() -> httpx.AsyncClient:
         settings = get_settings()
         api_key = settings.mcp_remote_api_key or ""
         _client = httpx.AsyncClient(
-            base_url=AFC_MCP_URL,
+            base_url=AFC_MCP_BASE_URL,
             timeout=30.0,
             headers={
                 "Authorization": f"Bearer {api_key}",
@@ -33,15 +35,63 @@ def _get_mcp_http_client() -> httpx.AsyncClient:
 
 
 async def close_mcp_client() -> None:
-    global _client
+    global _client, _mcp_session_id
+    _mcp_session_id = None
     if _client is not None and not _client.is_closed:
         await _client.aclose()
         _client = None
 
 
+async def _ensure_mcp_session() -> str | None:
+    """Initialize an MCP session if one hasn't been established yet.
+
+    Returns the session ID, or None if initialization failed.
+    """
+    global _mcp_session_id
+    if _mcp_session_id:
+        return _mcp_session_id
+
+    client = _get_mcp_http_client()
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "cloudagent", "version": "1.0.0"},
+        },
+        "id": 0,
+    }
+
+    try:
+        response = await client.post(AFC_MCP_PATH, json=payload)
+        response.raise_for_status()
+        sid = response.headers.get("Mcp-Session-Id")
+        if sid:
+            _mcp_session_id = sid
+            logger.info("MCP session established: %s…", sid[:8])
+            return sid
+
+        # Some servers return session ID in the JSON body.
+        result = response.json()
+        sid = result.get("result", {}).get("sessionId", "")
+        if sid:
+            _mcp_session_id = sid
+            return sid
+
+        logger.warning("MCP initialize returned no session ID, proceeding without")
+        return None
+    except Exception as exc:
+        logger.error("MCP session initialization failed: %s", exc)
+        return None
+
+
 async def _mcp_call_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """Call a single MCP tool and return the result."""
     client = _get_mcp_http_client()
+
+    # Ensure we have an MCP session.
+    await _ensure_mcp_session()
 
     payload = {
         "jsonrpc": "2.0",
@@ -53,13 +103,31 @@ async def _mcp_call_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str,
         "id": 1,
     }
 
+    headers = {}
+    if _mcp_session_id:
+        headers["Mcp-Session-Id"] = _mcp_session_id
+
     try:
-        response = await client.post("", json=payload)
+        response = await client.post(AFC_MCP_PATH, json=payload, headers=headers)
         response.raise_for_status()
         result = response.json()
 
         if "error" in result:
             error_msg = result["error"].get("message", str(result["error"]))
+            # If session expired, reset and retry once.
+            if "session" in error_msg.lower() and _mcp_session_id:
+                global _mcp_session_id
+                _mcp_session_id = None
+                await _ensure_mcp_session()
+                if _mcp_session_id:
+                    headers["Mcp-Session-Id"] = _mcp_session_id
+                    response2 = await client.post(AFC_MCP_PATH, json=payload, headers=headers)
+                    response2.raise_for_status()
+                    result2 = response2.json()
+                    if "error" in result2:
+                        return {"error": result2["error"].get("message", str(result2["error"]))}
+                    return result2.get("result", result2)
+
             logger.warning("MCP tool %s error: %s", tool_name, error_msg)
             return {"error": error_msg}
 
@@ -75,6 +143,7 @@ async def _mcp_call_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str,
 async def list_mcp_tools() -> list[dict[str, Any]]:
     """List all available MCP tools from the afc-ops server."""
     client = _get_mcp_http_client()
+    await _ensure_mcp_session()
 
     payload = {
         "jsonrpc": "2.0",
@@ -83,8 +152,12 @@ async def list_mcp_tools() -> list[dict[str, Any]]:
         "id": 1,
     }
 
+    headers = {}
+    if _mcp_session_id:
+        headers["Mcp-Session-Id"] = _mcp_session_id
+
     try:
-        response = await client.post("", json=payload)
+        response = await client.post(AFC_MCP_PATH, json=payload, headers=headers)
         response.raise_for_status()
         result = response.json()
         tools = result.get("result", {}).get("tools", [])

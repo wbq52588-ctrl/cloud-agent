@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 
-Provider = Literal["openai", "gemini", "zhipu", "vps"]
+Provider = Literal["deepseek"]
 Role = Literal["system", "user", "assistant"]
 AttachmentKind = Literal["image", "text"]
 
@@ -73,3 +73,7 @@ class ChatTurnRequest(BaseModel):
 
 class PublicConfigResponse(BaseModel):
     requires_password: bool
+    supported_providers: list[str] = Field(default_factory=lambda: ["deepseek"])
+    default_provider: str = "deepseek"
+    default_models: dict[str, str] = Field(default_factory=lambda: {"deepseek": "deepseek-v4-pro"})
+    current_wecom_userid: str | None = None

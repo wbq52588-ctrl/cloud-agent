@@ -292,16 +292,12 @@ p {
 button:focus-visible,
 textarea:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-textarea:focus,
-input:focus,
-select:focus,
-button:focus {
-  outline: none;
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--brand-accent, #4f6ef7);
+  outline-offset: 2px;
 }
 
 .primary-button:hover,
@@ -787,6 +783,7 @@ textarea {
 .mobile-input-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  position: relative;
   align-items: center;
   gap: 14px;
   padding: 14px 14px 14px 18px;
@@ -819,6 +816,29 @@ textarea {
   width: 44px;
   height: 44px;
   border-radius: 999px;
+}
+
+.attachment-trigger {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #7a5b40;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.attachment-trigger:hover {
+  color: #5d3d29;
+  border-color: rgba(151, 100, 68, 0.28);
+  background: rgba(255, 251, 245, 0.92);
 }
 
 .round-send-button {
@@ -1361,6 +1381,7 @@ textarea {
   .mobile-input-shell {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 44px;
+    position: relative;
     align-items: end;
     gap: 8px;
     padding: 8px;

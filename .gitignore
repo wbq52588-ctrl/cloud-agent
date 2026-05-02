@@ -3,4 +3,6 @@
 __pycache__/
 *.pyc
 data/
-.wrangler/
+.local-server*.log
+node_modules/
+.claude/

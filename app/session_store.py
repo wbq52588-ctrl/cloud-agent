@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import asyncio
+from datetime import UTC, datetime, timedelta
 import json
 from pathlib import Path
-from threading import Lock
 from uuid import uuid4
 
-from app.schemas import ChatMessage, SessionDetail, SessionSummary
+import aiosqlite
 
+from app.schemas import ChatMessage, SessionDetail, SessionSummary
 
 NEW_SESSION_TITLE = "新会话"
 
@@ -24,86 +25,134 @@ def _summarize_title(text: str) -> str:
 
 
 class SessionStore:
-    def __init__(self, store_path: str) -> None:
-        self._lock = Lock()
+    """SQLite-backed session store with per-session incremental writes and TTL expiry."""
+
+    def __init__(self, store_path: str, ttl_days: int = 30) -> None:
         self._store_path = Path(store_path)
-        self._sessions: dict[str, SessionDetail] = {}
+        self._ttl = timedelta(days=ttl_days)
         self._store_path.parent.mkdir(parents=True, exist_ok=True)
-        self._load()
+        self._db: aiosqlite.Connection | None = None
+        self._init_lock = asyncio.Lock()
 
-    def _sorted_sessions(self) -> list[SessionDetail]:
-        return sorted(
-            self._sessions.values(),
-            key=lambda session: session.updated_at,
-            reverse=True,
+    async def _get_db(self) -> aiosqlite.Connection:
+        if self._db is not None:
+            return self._db
+        async with self._init_lock:
+            if self._db is not None:  # Double-check inside the lock.
+                return self._db
+            self._db = await aiosqlite.connect(str(self._store_path))
+            self._db.row_factory = aiosqlite.Row
+            await self._db.execute("PRAGMA journal_mode=WAL")
+            await self._db.execute("PRAGMA foreign_keys=ON")
+            await self._db.executescript("""
+                CREATE TABLE IF NOT EXISTS sessions (
+                    session_id   TEXT PRIMARY KEY,
+                    title        TEXT NOT NULL,
+                    provider     TEXT,
+                    model        TEXT,
+                    system_prompt TEXT,
+                    updated_at   TEXT NOT NULL,
+                    message_count INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE IF NOT EXISTS messages (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id  TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,
+                    role        TEXT NOT NULL,
+                    content     TEXT NOT NULL,
+                    created_at  TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_messages_session
+                    ON messages(session_id, id);
+            """)
+            await self._db.commit()
+            return self._db
+
+    async def _purge_expired(self, db: aiosqlite.Connection) -> None:
+        cutoff = (datetime.now(UTC) - self._ttl).isoformat()
+        await db.execute("DELETE FROM sessions WHERE updated_at < ?", (cutoff,))
+        await db.commit()
+
+    async def create_session(self, title: str | None = None) -> SessionDetail:
+        db = await self._get_db()
+        session_id = uuid4().hex
+        final_title = (title or "").strip() or NEW_SESSION_TITLE
+        now = _now_iso()
+        await db.execute(
+            """INSERT INTO sessions (session_id, title, updated_at, message_count)
+               VALUES (?, ?, ?, 0)""",
+            (session_id, final_title, now),
+        )
+        await db.commit()
+        return SessionDetail(
+            session_id=session_id,
+            title=final_title,
+            provider=None,
+            model=None,
+            updated_at=now,
+            message_count=0,
+            system_prompt=None,
+            messages=[],
         )
 
-    def _load(self) -> None:
-        if not self._store_path.exists():
-            return
-
-        payload = json.loads(self._store_path.read_text(encoding="utf-8"))
-        self._sessions = {
-            item["session_id"]: SessionDetail.model_validate(item)
-            for item in payload
-        }
-
-    def _save(self) -> None:
-        payload = [session.model_dump() for session in self._sorted_sessions()]
-        temp_path = self._store_path.with_suffix(f"{self._store_path.suffix}.tmp")
-        temp_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
+    async def list_sessions(self) -> list[SessionSummary]:
+        db = await self._get_db()
+        await self._purge_expired(db)
+        rows = await db.execute(
+            """SELECT session_id, title, provider, model, updated_at, message_count
+               FROM sessions
+               ORDER BY updated_at DESC"""
         )
-        temp_path.replace(self._store_path)
-
-    def create_session(self, title: str | None = None) -> SessionDetail:
-        with self._lock:
-            session_id = uuid4().hex
-            session = SessionDetail(
-                session_id=session_id,
-                title=(title or "").strip() or NEW_SESSION_TITLE,
-                provider=None,
-                model=None,
-                updated_at=_now_iso(),
-                message_count=0,
-                system_prompt=None,
-                messages=[],
+        return [
+            SessionSummary(
+                session_id=row["session_id"],
+                title=row["title"],
+                provider=row["provider"],
+                model=row["model"],
+                updated_at=row["updated_at"],
+                message_count=row["message_count"],
             )
-            self._sessions[session_id] = session
-            self._save()
-            return SessionDetail.model_validate(session.model_dump())
+            for row in await rows.fetchall()
+        ]
 
-    def list_sessions(self) -> list[SessionSummary]:
-        with self._lock:
-            return [
-                SessionSummary(
-                    session_id=session.session_id,
-                    title=session.title,
-                    provider=session.provider,
-                    model=session.model,
-                    updated_at=session.updated_at,
-                    message_count=session.message_count,
-                )
-                for session in self._sorted_sessions()
-            ]
+    async def get_session(self, session_id: str) -> SessionDetail | None:
+        db = await self._get_db()
+        row = await db.execute(
+            """SELECT session_id, title, provider, model, system_prompt, updated_at, message_count
+               FROM sessions WHERE session_id = ?""",
+            (session_id,),
+        )
+        session_row = await row.fetchone()
+        if session_row is None:
+            return None
 
-    def get_session(self, session_id: str) -> SessionDetail | None:
-        with self._lock:
-            session = self._sessions.get(session_id)
-            if session is None:
-                return None
-            return SessionDetail.model_validate(session.model_dump())
+        msg_rows = await db.execute(
+            "SELECT role, content FROM messages WHERE session_id = ? ORDER BY id",
+            (session_id,),
+        )
+        messages = [
+            ChatMessage(role=row["role"], content=row["content"])
+            for row in await msg_rows.fetchall()
+        ]
+        return SessionDetail(
+            session_id=session_row["session_id"],
+            title=session_row["title"],
+            provider=session_row["provider"],
+            model=session_row["model"],
+            system_prompt=session_row["system_prompt"],
+            updated_at=session_row["updated_at"],
+            message_count=session_row["message_count"],
+            messages=messages,
+        )
 
-    def delete_session(self, session_id: str) -> bool:
-        with self._lock:
-            if session_id not in self._sessions:
-                return False
-            del self._sessions[session_id]
-            self._save()
-            return True
+    async def delete_session(self, session_id: str) -> bool:
+        db = await self._get_db()
+        cursor = await db.execute(
+            "DELETE FROM sessions WHERE session_id = ?", (session_id,)
+        )
+        await db.commit()
+        return cursor.rowcount > 0
 
-    def append_turn(
+    async def append_turn(
         self,
         session_id: str,
         user_message: str,
@@ -112,20 +161,35 @@ class SessionStore:
         model: str,
         system_prompt: str | None,
     ) -> SessionDetail | None:
-        with self._lock:
-            session = self._sessions.get(session_id)
-            if session is None:
-                return None
+        db = await self._get_db()
+        session_row = await (await db.execute(
+            "SELECT session_id, title FROM sessions WHERE session_id = ?",
+            (session_id,),
+        )).fetchone()
 
-            if session.title == NEW_SESSION_TITLE:
-                session.title = _summarize_title(user_message)
+        if session_row is None:
+            return None
 
-            session.system_prompt = system_prompt
-            session.provider = provider
-            session.model = model
-            session.messages.append(ChatMessage(role="user", content=user_message))
-            session.messages.append(ChatMessage(role="assistant", content=assistant_message))
-            session.message_count = len(session.messages)
-            session.updated_at = _now_iso()
-            self._save()
-            return SessionDetail.model_validate(session.model_dump())
+        title = session_row["title"]
+        if title == NEW_SESSION_TITLE:
+            title = _summarize_title(user_message)
+
+        now = _now_iso()
+        await db.execute(
+            """UPDATE sessions
+               SET title = ?, provider = ?, model = ?, system_prompt = ?,
+                   updated_at = ?, message_count = message_count + 2
+               WHERE session_id = ?""",
+            (title, provider, model, system_prompt, now, session_id),
+        )
+        await db.execute(
+            "INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
+            (session_id, "user", user_message, now),
+        )
+        await db.execute(
+            "INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
+            (session_id, "assistant", assistant_message, now),
+        )
+        await db.commit()
+
+        return await self.get_session(session_id)

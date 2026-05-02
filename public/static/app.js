@@ -5,8 +5,8 @@
   currentWecomUserId: "",
   accessPassword: "",
   requiresPassword: false,
-  supportedProviders: ["codex", "gemini"],
-  defaultProvider: "codex",
+  supportedProviders: ["deepseek"],
+  defaultProvider: "deepseek",
   attachments: [],
   sidebarCollapsed: false,
   isGenerating: false,
@@ -16,68 +16,60 @@
   lastProgressAt: 0,
   sessionMenuOpenId: null,
   pendingDeleteSession: null,
+  _renderedCount: 0,
 };
 
 const DOCUMENT_ACCEPT =
-  ".txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh,text/plain,text/markdown,application/json,text/csv,text/html,text/css,application/xml,text/xml";
+  "image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh,text/plain,text/markdown,application/json,text/csv,text/html,text/css,application/xml,text/xml";
+
+const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+const TEXT_FILE_EXTENSIONS = new Set([
+  "txt",
+  "md",
+  "json",
+  "csv",
+  "log",
+  "py",
+  "js",
+  "ts",
+  "tsx",
+  "jsx",
+  "html",
+  "css",
+  "yml",
+  "yaml",
+  "xml",
+  "sh",
+]);
+
+const TEXT_CONTENT_TYPES = new Set([
+  "text/plain",
+  "text/markdown",
+  "application/json",
+  "text/csv",
+  "text/html",
+  "text/css",
+  "application/xml",
+  "text/xml",
+]);
 
 const modelOptions = {
-  codex: [
-    { value: "codex", label: "Codex" },
-  ],
-  gemini: [
-    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-  ],
-  openai: [
-    { value: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
-    { value: "gpt-4.1", label: "GPT-4.1" },
-    { value: "gpt-5.4", label: "GPT-5.4" },
-  ],
-  zhipu: [
-    { value: "glm-4.7", label: "GLM-4.7" },
-    { value: "glm-4.5-air", label: "GLM-4.5 Air" },
-  ],
-  vps: [
-    { value: "vps-run", label: "立即运行任务" },
+  deepseek: [
+    { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
   ],
 };
 
 const modelDefaults = {
-  codex: "codex",
-  gemini: "gemini-2.5-flash",
-  openai: "gpt-4.1-mini",
-  zhipu: "glm-4.7",
-  vps: "vps-run",
+  deepseek: "deepseek-v4-pro",
 };
 
 const providerTitles = {
-  gemini: "Gemini",
-  openai: "OpenAI",
-  zhipu: "GLM",
-  vps: "VPS",
-  codex: "Codex",
+  deepseek: "DeepSeek",
 };
 
 const modelDescriptions = {
-  codex: {
-    codex: { title: "代理", detail: "已登录的 Codex 代理，按后端桥接配置运行" },
-  },
-  gemini: {
-    "gemini-2.5-flash": { title: "快速", detail: "更适合日常提问与快速回复" },
-    "gemini-2.5-pro": { title: "思考", detail: "更适合复杂任务与长上下文分析" },
-  },
-  openai: {
-    "gpt-4.1-mini": { title: "轻量", detail: "更快，适合大多数常规对话" },
-    "gpt-4.1": { title: "标准", detail: "更平衡，适合正式写作与推理" },
-    "gpt-5.4": { title: "高级", detail: "更强推理与复杂任务处理能力" },
-  },
-  zhipu: {
-    "glm-4.7": { title: "标准", detail: "适合通用问答与中文任务" },
-    "glm-4.5-air": { title: "轻快", detail: "速度优先，适合短对话" },
-  },
-  vps: {
-    "vps-run": { title: "执行", detail: "直接触发一次远程任务" },
+  deepseek: {
+    "deepseek-v4-pro": { title: "V4 Pro", detail: "启用 thinking 与 high reasoning effort" },
   },
 };
 
@@ -195,7 +187,7 @@ function formatRelativeTime(iso) {
 }
 
 function providerLabel(provider) {
-  return providerTitles[provider] || "Codex";
+  return providerTitles[provider] || "DeepSeek";
 }
 
 function resolveWecomUserIdFromRuntime() {
@@ -222,6 +214,7 @@ function resolveWecomUserIdFromRuntime() {
 function syncResolvedWecomUserId() {
   const wecomUserId = resolveWecomUserIdFromRuntime();
   state.currentWecomUserId = wecomUserId;
+  state.activeSessionId = localStorage.getItem(userScopedStorageKey("active-session")) || null;
 
   if (wecomUserId) {
     localStorage.setItem("cloud-agent-wecom-userid", wecomUserId);
@@ -236,7 +229,7 @@ function availableProviders() {
 
 function renderProviderOptions() {
   const providers = availableProviders();
-  const fallbackProvider = providers.includes(state.defaultProvider) ? state.defaultProvider : (providers[0] || "gemini");
+  const fallbackProvider = providers.includes(state.defaultProvider) ? state.defaultProvider : (providers[0] || "deepseek");
   const optionHtml = providers
     .map((provider) => `<option value="${provider}">${providerLabel(provider)}</option>`)
     .join("");
@@ -263,16 +256,22 @@ function syncMessagePlaceholder() {
 }
 
 function syncTopbarTitle() {
-  const title = state.activeSessionId ? elements.chatTitle.textContent : "Codex";
-  elements.mobileProviderTitle.textContent = title;
+  const title = state.activeSessionId ? elements.chatTitle.textContent : "DeepSeek";
+  if (elements.mobileProviderTitle) {
+    elements.mobileProviderTitle.textContent = title;
+  }
 }
 
 function syncGreetingState() {
   const hasMessages = state.activeMessages.length > 0;
-  elements.mobileGreetingTitle.innerHTML = '<span class="empty-title-mark" aria-hidden="true"></span>需要我为你做些什么？';
-  elements.mobileGreetingSubtitle.textContent = hasMessages
-    ? `${providerLabel(elements.provider.value)} 已准备好`
-    : "你好，欢迎回来";
+  if (elements.mobileGreetingTitle) {
+    elements.mobileGreetingTitle.innerHTML = '<span class="empty-title-mark" aria-hidden="true"></span>需要我为你做些什么？';
+  }
+  if (elements.mobileGreetingSubtitle) {
+    elements.mobileGreetingSubtitle.textContent = hasMessages
+      ? `${providerLabel(elements.provider.value)} 已准备好`
+      : "你好，欢迎回来";
+  }
   document.body.classList.toggle("has-conversation", hasMessages);
 }
 
@@ -293,7 +292,7 @@ function showIdentityRequiredState(message) {
   state.sessions = [];
   state.activeSessionId = null;
   state.activeMessages = [];
-  elements.chatTitle.textContent = "Codex";
+  elements.chatTitle.textContent = "DeepSeek";
   elements.sessionList.innerHTML = '<p class="section-title">当前用户未登录</p>';
   elements.messageList.classList.remove("is-empty");
   elements.messageList.innerHTML = `
@@ -371,7 +370,7 @@ function applySidebarState() {
   }
   document.body.classList.toggle("sidebar-collapsed", state.sidebarCollapsed && !mobile);
   elements.sidebarRailToggle?.classList.toggle("hidden", mobile || !state.sidebarCollapsed);
-  elements.mobileSidebarBackdrop.classList.toggle("hidden", !mobile || state.sidebarCollapsed);
+  elements.mobileSidebarBackdrop?.classList.toggle("hidden", !mobile || state.sidebarCollapsed);
   document.body.classList.toggle("drawer-open", mobile && !state.sidebarCollapsed);
   localStorage.setItem("cloud-agent-sidebar-collapsed", state.sidebarCollapsed ? "1" : "0");
   syncSidebarButtons();
@@ -388,14 +387,18 @@ function syncSystemPromptFields(source = "desktop") {
 function syncComposerState() {
   const generating = state.isGenerating;
   const identityReady = Boolean(state.currentWecomUserId);
-  elements.userMessage.disabled = !identityReady || generating;
-  elements.sendButton.disabled = !identityReady;
-  elements.sendButton.classList.toggle("is-generating", generating);
-  elements.sendButton.classList.toggle("is-disabled", !identityReady);
-  elements.sendButton.setAttribute("aria-label", !identityReady ? "等待登录" : generating ? "停止生成" : "发送");
-  elements.sendButton.querySelector(".send-label").textContent = !identityReady ? "登录后使用" : generating ? "停止" : "发送";
-  elements.sendButton.querySelector(".send-glyph").classList.toggle("is-stop", generating);
-  elements.stopButton.classList.add("hidden");
+  if (elements.userMessage) {
+    elements.userMessage.disabled = !identityReady || generating;
+  }
+  if (elements.sendButton) {
+    elements.sendButton.disabled = !identityReady;
+    elements.sendButton.classList.toggle("is-generating", generating);
+    elements.sendButton.classList.toggle("is-disabled", !identityReady);
+    elements.sendButton.setAttribute("aria-label", !identityReady ? "等待登录" : generating ? "停止生成" : "发送");
+    elements.sendButton.querySelector(".send-label").textContent = !identityReady ? "登录后使用" : generating ? "停止" : "发送";
+    elements.sendButton.querySelector(".send-glyph").classList.toggle("is-stop", generating);
+  }
+  elements.stopButton?.classList.add("hidden");
 }
 
 function renderAttachments() {
@@ -424,6 +427,11 @@ function renderAttachments() {
   });
 }
 
+function userScopedStorageKey(name) {
+  const userId = (state.currentWecomUserId || "default").replace(/[^a-zA-Z0-9_.-]+/g, "_");
+  return `cloud-agent-${name}-${userId || "default"}`;
+}
+
 function persistPreferences() {
   localStorage.setItem(
     "cloud-agent-preferences",
@@ -431,14 +439,14 @@ function persistPreferences() {
         provider: elements.provider.value,
         model: elements.model.value,
         systemPrompt: elements.systemPromptDesktop.value,
-        activeSessionId: state.activeSessionId,
       }),
     );
+  localStorage.setItem(userScopedStorageKey("active-session"), state.activeSessionId || "");
 
   if (state.accessPassword) {
-    localStorage.setItem("cloud-agent-access-password", state.accessPassword);
+    sessionStorage.setItem("cloud-agent-access-password", state.accessPassword);
   } else {
-    localStorage.removeItem("cloud-agent-access-password");
+    sessionStorage.removeItem("cloud-agent-access-password");
   }
 
   if (state.currentWecomUserId) {
@@ -458,18 +466,18 @@ function loadPreferences() {
       syncModelOptions(data.model || "");
       elements.systemPromptDesktop.value = data.systemPrompt || "";
       elements.systemPromptMobile.value = data.systemPrompt || "";
-      state.activeSessionId = data.activeSessionId || null;
     } catch {
       localStorage.removeItem("cloud-agent-preferences");
     }
   }
 
-  state.accessPassword = localStorage.getItem("cloud-agent-access-password") || "";
+  state.accessPassword = sessionStorage.getItem("cloud-agent-access-password") || "";
   state.currentWecomUserId = localStorage.getItem("cloud-agent-wecom-userid") || "";
   state.sidebarCollapsed = localStorage.getItem("cloud-agent-sidebar-collapsed") === "1";
   if (isMobileViewport()) {
     state.sidebarCollapsed = true;
   }
+  state.activeSessionId = localStorage.getItem(userScopedStorageKey("active-session")) || null;
 }
 
 function syncViewportInsets(forceReset = false) {
@@ -522,13 +530,13 @@ function renderModelPickerCards(provider, options, activeModel) {
   if (!elements.providerChipList || !elements.modelCardList) return;
 
   elements.providerChipList.innerHTML = `
-    <span class="provider-chip active provider-chip-static">Codex</span>
+    <span class="provider-chip active provider-chip-static">DeepSeek</span>
   `;
 
   const activeLabel = options.find((option) => option.value === activeModel)?.label || activeModel || "默认模式";
   elements.modelCardList.innerHTML = `
     <article class="model-card active model-card-static">
-      <span>Codex</span>
+      <span>DeepSeek</span>
       <strong>当前后端默认模型：${escapeHtml(activeLabel)}</strong>
       <em>已登录并固定使用</em>
     </article>
@@ -612,6 +620,20 @@ function renderSessions() {
     .join("");
 }
 
+function _messageHtml(message, index) {
+  return `
+    <article class="message-row ${message.role} ${message.pending ? "pending" : ""}">
+      <article class="message ${message.role} ${message.pending ? "pending" : ""}">
+        <div class="message-toolbar">
+          <span class="message-role">${message.role === "user" ? "你" : message.pending ? "思考中" : "助手"}</span>
+          ${message.pending ? "" : `<button type="button" class="ghost-button message-copy-button" data-copy-index="${index}">复制</button>`}
+        </div>
+        <div class="message-content">${message.pending ? `<div class="thinking-line" aria-label="${escapeHtml(message.content)}"><span class="thinking-wave" aria-hidden="true"><span></span><span></span><span></span></span><span class="thinking-label">${escapeHtml(message.content)}</span></div>` : formatContent(message.content)}</div>
+      </article>
+    </article>
+  `;
+}
+
 function renderMessages(messages, pending = null) {
   state.activeMessages = messages;
   const items = [...messages];
@@ -629,26 +651,33 @@ function renderMessages(messages, pending = null) {
         <h3><span class="empty-title-mark" aria-hidden="true"></span>需要我为你做些什么？</h3>
       </div>
     `;
+    state._renderedCount = 0;
     syncGreetingState();
     return;
   }
 
   elements.messageList.classList.remove("is-empty");
-  elements.messageList.innerHTML = items
-    .map(
-      (message, index) => `
-        <article class="message-row ${message.role} ${message.pending ? "pending" : ""}">
-          <article class="message ${message.role} ${message.pending ? "pending" : ""}">
-            <div class="message-toolbar">
-              <span class="message-role">${message.role === "user" ? "你" : message.pending ? "思考中" : "助手"}</span>
-              ${message.pending ? "" : `<button type="button" class="ghost-button message-copy-button" data-copy-index="${index}">复制</button>`}
-            </div>
-            <div class="message-content">${message.pending ? `<div class="thinking-line" aria-label="${escapeHtml(message.content)}"><span class="thinking-wave" aria-hidden="true"><span></span><span></span><span></span></span><span class="thinking-label">${escapeHtml(message.content)}</span></div>` : formatContent(message.content)}</div>
-          </article>
-        </article>
-      `,
-    )
-    .join("");
+
+  // Incremental rendering: if the new items are a strict superset of what we
+  // already rendered, only append the delta to avoid a full DOM rebuild.
+  const canAppend = (
+    state._renderedCount > 0 &&
+    state._renderedCount < items.length &&
+    !pending // pending placeholder replaces itself; don't append a duplicate.
+  );
+
+  if (canAppend) {
+    const newItems = items.slice(state._renderedCount);
+    const html = newItems.map((msg, i) => _messageHtml(msg, state._renderedCount + i)).join("");
+    elements.messageList.insertAdjacentHTML("beforeend", html);
+    state._renderedCount = items.length;
+  } else {
+    // Full rebuild — e.g. session switch or initial load.
+    elements.messageList.innerHTML = items
+      .map((message, index) => _messageHtml(message, index))
+      .join("");
+    state._renderedCount = items.length;
+  }
 
   requestAnimationFrame(() => {
     if (isMobileViewport()) {
@@ -718,7 +747,8 @@ async function handleMessageListClick(event) {
 function clearInvalidSessionState() {
   state.activeSessionId = null;
   state.activeMessages = [];
-  elements.chatTitle.textContent = "Codex";
+  state._renderedCount = 0;
+  elements.chatTitle.textContent = "DeepSeek";
   renderSessions();
   renderMessages([]);
   persistPreferences();
@@ -750,18 +780,6 @@ function normalizeSessionMessages(messages) {
     }
     return message;
   });
-}
-
-const pendingProgressSteps = [
-  "已收到请求，正在准备会话",
-  "正在调用模型",
-  "正在整理回复",
-  "正在写入会话记录",
-];
-
-function buildPendingPlaceholder(stepIndex = 0) {
-  const index = Math.max(0, Math.min(stepIndex, pendingProgressSteps.length - 1));
-  return pendingProgressSteps[index];
 }
 
 function stopPendingProgress() {
@@ -798,6 +816,27 @@ async function fetchJson(url, options = {}) {
     throw new Error(detail);
   }
   return response.json();
+}
+
+function logClient(event, detail = {}) {
+  try {
+    const payload = JSON.stringify({
+      event,
+      detail,
+      activeSessionId: state.activeSessionId,
+      isGenerating: state.isGenerating,
+      at: new Date().toISOString(),
+    });
+    navigator.sendBeacon?.("/v1/client-log", new Blob([payload], { type: "application/json" })) ||
+      fetch("/v1/client-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+  } catch {
+    // Debug logging must never break chat.
+  }
 }
 
 async function fetchEventStream(url, options = {}, handlers = {}) {
@@ -915,11 +954,8 @@ async function loadPublicConfig() {
       }
     });
   }
-  if (config.default_models?.gemini && modelOptions.gemini && !state.supportedProviders.includes("gemini")) {
-    state.supportedProviders.push("gemini");
-  }
-  if (!state.supportedProviders.includes("codex")) {
-    state.supportedProviders.unshift("codex");
+  if (!state.supportedProviders.includes("deepseek")) {
+    state.supportedProviders.unshift("deepseek");
   }
   renderProviderOptions();
   if (!availableProviders().includes(elements.provider.value)) {
@@ -970,6 +1006,20 @@ async function loadSession(sessionId) {
   }
 }
 
+async function fetchCompletedSession(sessionId, previousMessageCount) {
+  const session = await fetchJson(`/v1/sessions/${sessionId}`);
+  const messages = normalizeSessionMessages(session.messages);
+  const lastMessage = messages[messages.length - 1];
+  if (
+    messages.length > previousMessageCount &&
+    lastMessage?.role === "assistant" &&
+    String(lastMessage.content || "").trim()
+  ) {
+    return { ...session, messages };
+  }
+  return null;
+}
+
 function stopGeneration() {
   if (!state.abortController) return;
   state.abortController.abort();
@@ -984,12 +1034,14 @@ function stopGeneration() {
 async function submitTurn(event) {
   event.preventDefault();
   if (state.isGenerating) {
+    logClient("submit:stop-existing");
     stopGeneration();
     return;
   }
 
   const userMessage = elements.userMessage.value.trim();
   if (!userMessage) return;
+  logClient("submit:start", { userMessageLength: userMessage.length });
 
   if (!state.activeSessionId) {
     const session = await createSession();
@@ -1005,62 +1057,79 @@ async function submitTurn(event) {
   elements.userMessage.value = "";
   elements.userMessage.dispatchEvent(new Event("input"));
   syncComposerState();
-  renderMessages(state.activeMessages, {
-    placeholder: buildPendingPlaceholder(0),
-  });
+  renderMessages(state.activeMessages);
   setStatus("正在生成回复…");
 
+  let streamedContent = "";
+  const pendingEl = _insertPendingMessage("正在输入中");
+
+  const removePending = () => {
+    if (pendingEl && pendingEl.parentNode) {
+      pendingEl.remove();
+    }
+  };
+
   try {
-    let streamedSession = null;
-
-    await fetchEventStream(`/v1/sessions/${state.activeSessionId}/chat/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        provider: elements.provider.value,
-        model: elements.model.value || null,
-        system_prompt: elements.systemPromptDesktop.value || null,
-        user_message: userMessage,
-        attachments: state.attachments,
-      }),
-      signal: state.abortController.signal,
-    }, {
-      onProgress: (payload) => {
-        const step = String(payload?.step || "").trim() || buildPendingPlaceholder(0);
-        state.lastProgressAt = Date.now();
-        renderMessages(state.activeMessages, { placeholder: step });
+    await fetchEventStream(
+      `/v1/sessions/${state.activeSessionId}/chat/stream`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: elements.provider.value,
+          model: elements.model.value || null,
+          system_prompt: elements.systemPromptDesktop.value || null,
+          user_message: userMessage,
+          attachments: state.attachments,
+        }),
+        signal: state.abortController.signal,
       },
-      onFinal: (payload) => {
-        streamedSession = payload?.session || null;
+      {
+        onProgress: (payload) => {
+          if (payload && payload.content) {
+            streamedContent += payload.content;
+            if (pendingEl) {
+              pendingEl.querySelector(".message-content").innerHTML =
+                formatContent(streamedContent);
+            }
+            elements.messageList.scrollTop = elements.messageList.scrollHeight;
+          }
+        },
+        onFinal: async () => {
+          removePending();
+          if (streamedContent) {
+            state._renderedCount += 1; // account for the assistant message we'll add
+            state.activeMessages = [
+              ...state.activeMessages,
+              { role: "assistant", content: streamedContent },
+            ];
+            // Render just the final assistant message.
+            const finalHtml = _messageHtml(
+              { role: "assistant", content: streamedContent },
+              state.activeMessages.length - 1,
+            );
+            elements.messageList.insertAdjacentHTML("beforeend", finalHtml);
+          }
+          stopPendingProgress();
+          state.attachments = [];
+          elements.fileInput.value = "";
+          renderAttachments();
+          await refreshSessions();
+          setStatus("回复已完成");
+          logClient("submit:success", { messageCount: state.activeMessages.length });
+        },
+        onError: (payload) => {
+          removePending();
+          throw new Error((payload && payload.detail) || "流式响应中断");
+        },
       },
-      onError: (payload) => {
-        throw new Error(String(payload?.detail || "流式请求失败"));
-      },
-    });
-
-    const session = streamedSession;
-    if (!session) {
-      throw new Error("没有收到最终会话结果");
-    }
-
-    const remainingProgressDwell = Math.max(0, 260 - (Date.now() - state.lastProgressAt));
-    if (remainingProgressDwell > 0) {
-      await delay(remainingProgressDwell);
-    }
-
-    state.activeMessages = normalizeSessionMessages(session.messages);
-    stopPendingProgress();
-    state.attachments = [];
-    elements.fileInput.value = "";
-    renderAttachments();
-    elements.chatTitle.textContent = session.title;
-    renderMessages(state.activeMessages);
-    await refreshSessions();
-    setStatus("回复已完成");
+    );
   } catch (error) {
+    logClient("submit:error", { message: error?.message || String(error) });
+    removePending();
     stopPendingProgress();
     if (error.name === "AbortError") return;
-    if (error.message.includes("Session not found")) {
+    if (error.message && error.message.includes("Session not found")) {
       clearInvalidSessionState();
       setStatus("当前会话已失效，请重新创建一个新会话");
       return;
@@ -1076,6 +1145,21 @@ async function submitTurn(event) {
     stopPendingProgress();
     syncComposerState();
   }
+}
+
+function _insertPendingMessage(placeholder) {
+  const html = `
+    <article class="message-row assistant pending">
+      <article class="message assistant pending">
+        <div class="message-toolbar">
+          <span class="message-role">思考中</span>
+        </div>
+        <div class="message-content">${escapeHtml(placeholder)}</div>
+      </article>
+    </article>
+  `;
+  elements.messageList.insertAdjacentHTML("beforeend", html);
+  return elements.messageList.lastElementChild;
 }
 
 async function verifyAccess() {
@@ -1148,12 +1232,45 @@ function readFileAsText(file) {
   });
 }
 
+function getFileExtension(fileName) {
+  const parts = String(fileName || "").toLowerCase().split(".");
+  return parts.length > 1 ? parts.pop() : "";
+}
+
+function isTextFile(file) {
+  return (
+    file.type.startsWith("text/") ||
+    TEXT_CONTENT_TYPES.has(file.type) ||
+    TEXT_FILE_EXTENSIONS.has(getFileExtension(file.name))
+  );
+}
+
+function validateUploadFile(file) {
+  if (file.type.startsWith("video/")) {
+    return "暂不支持上传视频文件";
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    return "文件不能超过 2MB";
+  }
+  if (file.type.startsWith("image/") || isTextFile(file)) {
+    return "";
+  }
+  return "暂只支持图片和文本/代码类文件";
+}
+
 async function handleFiles(files) {
   if (!files.length) return;
   setStatus("正在读取附件...");
+  const rejected = [];
 
   try {
     for (const file of files) {
+      const reason = validateUploadFile(file);
+      if (reason) {
+        rejected.push(`${file.name}: ${reason}`);
+        continue;
+      }
+
       if (file.type.startsWith("image/")) {
         const dataUrl = await readFileAsDataUrl(file);
         state.attachments.push({
@@ -1162,7 +1279,7 @@ async function handleFiles(files) {
           content_type: file.type || "image/png",
           data_url: dataUrl,
         });
-      } else {
+      } else if (isTextFile(file)) {
         const text = await readFileAsText(file);
         state.attachments.push({
           kind: "text",
@@ -1173,9 +1290,15 @@ async function handleFiles(files) {
       }
     }
     renderAttachments();
-    setStatus("附件已就绪");
+    if (rejected.length) {
+      setStatus(`已添加 ${state.attachments.length} 个附件；未添加：${rejected.join("；")}`);
+    } else {
+      setStatus("附件已就绪");
+    }
   } catch (error) {
     setStatus(`附件读取失败: ${error.message}`);
+  } finally {
+    elements.fileInput.value = "";
   }
 }
 
@@ -1212,7 +1335,7 @@ function bindEvents() {
       closeAvatarMenu();
       state.accessPassword = "";
       state.currentWecomUserId = "";
-      localStorage.removeItem("cloud-agent-access-password");
+      sessionStorage.removeItem("cloud-agent-access-password");
       localStorage.removeItem("cloud-agent-wecom-userid");
       syncCurrentUserUI();
       hideIdentityOverlay();
@@ -1457,4 +1580,13 @@ async function bootstrap() {
 
 bootstrap().catch((error) => {
   setStatus(`初始化失败: ${error.message}`);
+  logClient("bootstrap:error", { message: error.message });
+});
+
+window.addEventListener("error", (event) => {
+  logClient("window:error", { message: event.message, source: event.filename, line: event.lineno });
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  logClient("window:unhandledrejection", { reason: String(event.reason?.message || event.reason || "") });
 });

@@ -1,40 +1,31 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+import logging
+import traceback
 
 from fastapi import HTTPException
 
-from app.config import Settings
-from app.provider_runner import run_with_retry
-from app.providers.gemini_provider import run_gemini_agent
-from app.providers.openai_provider import run_openai_agent
-from app.providers.vps_provider import run_vps_agent
-from app.providers.zhipu_provider import run_zhipu_agent
-from app.schemas import AgentRunRequest, ChatTurnRequest
+logger = logging.getLogger(__name__)
 
-ProviderRunner = Callable[[AgentRunRequest, Settings], Awaitable[tuple[str, str]]]
+from app.claude_code_decorator import apply_claude_code_decorator
+from app.config import Settings
+from app.external_context import build_external_context
+from app.provider_runner import run_with_retry
+from app.providers.deepseek_provider import run_deepseek_agent
+from app.schemas import AgentRunRequest, ChatTurnRequest
+from app.skill_loader import build_system_prompt_with_skills
 
 
 def format_provider_error(exc: Exception) -> str:
     message = str(exc)
     lowered = message.lower()
 
-    if "insufficient_quota" in lowered:
-        return "OpenAI API 额度不足，请检查 billing 或充值后重试"
     if "timed out" in lowered or "timeout" in lowered:
         return "模型响应超时，请稍后重试"
-    if "resource_exhausted" in lowered:
-        return "Gemini 当前模型额度不足，请稍后重试或切换其他 Gemini 模型"
-    if "api key was reported as leaked" in lowered:
-        return "Gemini API Key 已被判定泄露，请更换新的 Key"
-    if "missing zhipu_api_key" in lowered:
-        return "服务端未配置 ZHIPU_API_KEY"
+    if "missing deepseek_api_key" in lowered:
+        return "服务端未配置 DEEPSEEK_API_KEY"
     if "permission_denied" in lowered:
         return "模型服务拒绝了这次请求，请检查 API Key 权限"
-    if "missing openai_api_key" in lowered:
-        return "服务端未配置 OPENAI_API_KEY"
-    if "missing gemini_api_key" in lowered:
-        return "服务端未配置 GEMINI_API_KEY"
 
     return f"Agent run failed: {exc}"
 
@@ -72,29 +63,33 @@ def build_turn_agent_request(messages, request: ChatTurnRequest) -> AgentRunRequ
     )
 
 
-async def _run_non_vps(
-    request: AgentRunRequest,
-    settings: Settings,
-    runner: ProviderRunner,
-) -> tuple[str, str]:
-    return await run_with_retry(lambda: runner(request, settings), settings)
-
-
 async def execute_agent_request(
     request: AgentRunRequest,
     settings: Settings,
 ) -> tuple[str, str]:
+    external_context = await build_external_context(request.system_prompt, request.messages)
+    system_prompt = request.system_prompt
+    if external_context:
+        system_prompt = (
+            f"{external_context}\n\n---\n\n{system_prompt}"
+            if system_prompt
+            else external_context
+        )
+
+    request = request.model_copy(
+        update={
+            "system_prompt": build_system_prompt_with_skills(
+                apply_claude_code_decorator(system_prompt, request.messages),
+                request.messages,
+            )
+        }
+    )
     try:
-        if request.provider == "vps":
-            return await run_vps_agent(request)
-        if request.provider == "openai":
-            return await _run_non_vps(request, settings, run_openai_agent)
-        if request.provider == "zhipu":
-            return await _run_non_vps(request, settings, run_zhipu_agent)
-        return await _run_non_vps(request, settings, run_gemini_agent)
+        return await run_with_retry(lambda: run_deepseek_agent(request, settings), settings)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
+        logger.error("AGENT_ERROR exc=%s traceback=%s", repr(exc), traceback.format_exc())
         raise HTTPException(status_code=500, detail=format_provider_error(exc)) from exc

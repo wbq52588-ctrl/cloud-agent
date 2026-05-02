@@ -4,20 +4,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "multi-model-agent"
+    app_name: str = "deepseek-workspace"
     app_env: str = "development"
-    openai_api_key: str | None = None
-    gemini_api_key: str | None = None
-    zhipu_api_key: str | None = None
-    zhipu_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
-    zhipu_coding_base_url: str = "https://open.bigmodel.cn/api/coding/paas/v4"
+    deepseek_api_key: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com"
     app_access_password: str | None = None
-    default_openai_model: str = "gpt-4.1-mini"
-    default_gemini_model: str = "gemini-2.5-flash"
-    default_zhipu_model: str = "glm-4.7"
-    session_store_path: str = "data/sessions.json"
+    default_deepseek_model: str = "deepseek-v4-pro"
+    session_store_path: str = "data/sessions.db"
+    session_ttl_days: int = 30
     provider_timeout_seconds: float = 45.0
     provider_max_retries: int = 1
+    provider_retry_base_delay: float = 1.2
+    cors_origins: list[str] = ["*"]
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
-    <title>Codex Workspace</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260402a" />
+    <title>DeepSeek Workspace</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20260430-upload2" />
   </head>
   <body>
     <div id="auth-overlay" class="auth-overlay hidden">
@@ -80,10 +80,10 @@
           <div class="chat-header-main">
             <div class="desktop-provider-chip">
               <span class="empty-title-mark" aria-hidden="true"></span>
-              <span class="desktop-provider-name">Codex</span>
+              <span class="desktop-provider-name">DeepSeek</span>
             </div>
 
-            <h2 id="chat-title" class="desktop-chat-title">Codex</h2>
+            <h2 id="chat-title" class="desktop-chat-title">DeepSeek</h2>
 
             <div class="avatar-menu-shell">
               <button id="avatar-menu-toggle" type="button" class="mobile-avatar" aria-label="当前账号菜单">AI</button>
@@ -104,7 +104,7 @@
               </button>
               <div class="mobile-topbar-title">
                 <span class="empty-title-mark mobile-topbar-mark" aria-hidden="true"></span>
-                <span id="mobile-provider-title">Codex</span>
+                <span id="mobile-provider-title">DeepSeek</span>
               </div>
             </div>
 
@@ -114,15 +114,13 @@
             <label>
               模型提供方
               <select id="provider">
-                <option value="codex" selected>Codex</option>
-                <option value="gemini">Gemini</option>
+                <option value="deepseek" selected>DeepSeek</option>
               </select>
             </label>
             <label>
               模型
               <select id="model">
-                <option value="codex" selected>Codex</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="deepseek-v4-pro" selected>DeepSeek V4 Pro</option>
               </select>
             </label>
           </div>
@@ -153,6 +151,9 @@
               <div class="mobile-text-entry">
                 <textarea id="user-message" rows="1" placeholder="输入你的问题，直接开始" aria-label="输入消息"></textarea>
               </div>
+              <button id="desktop-attachment-trigger" type="button" class="round-tool-button attachment-trigger" aria-label="上传文件" title="上传文件">
+                <span aria-hidden="true">+</span>
+              </button>
               <button id="send-button" type="submit" class="round-send-button" aria-label="发送">
                 <span class="send-label" aria-hidden="true">发送</span>
                 <span class="send-glyph" aria-hidden="true"></span>
@@ -177,7 +178,7 @@
       class="hidden"
       type="file"
       multiple
-      accept=".txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh"
+      accept="image/*,.txt,.md,.json,.csv,.log,.py,.js,.ts,.tsx,.jsx,.html,.css,.yml,.yaml,.xml,.sh,text/plain,text/markdown,application/json,text/csv,text/html,text/css,application/xml,text/xml"
     />
 
     <div id="delete-dialog" class="confirm-dialog hidden" aria-hidden="true">
@@ -192,7 +193,6 @@
       </div>
     </div>
 
-    <script src="/static/app.js?v=20260402a"></script>
-  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9e5770468d43d811',t:'MTc3NTA0NDg4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4a6eeb06c7e14347b675c9ce260a5a97","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+    <script src="/static/app.js?v=20260430-user-scope1"></script>
 </body>
 </html>

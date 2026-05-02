@@ -1,33 +1,38 @@
-# Multi Model Agent
+# DeepSeek Workspace
 
-一个同时支持 VPS FastAPI 后端和 Cloudflare Worker 前端会话层的多模型 Agent 项目。
-
-## 仓库结构
-
-当前仓库已经收口为单一源码仓，包含两种运行形态：
+一个部署在 VPS 上的 DeepSeek 聊天工作台。项目现在已经收口为：
 
 - FastAPI 后端
-  - `app/main.py`
-- Cloudflare Worker 前端/会话层
-  - `src/worker.js`
-  - `public/`
-  - `wrangler.jsonc`
+- 本地静态前端，由 FastAPI 直接托管
+- DeepSeek API 调用
+- 按用户隔离的本地会话存储
+- AFC stats 项目上下文接入
 
-Worker 负责：
+## 目录结构
 
-- 静态页面与会话列表
-- `codex` 路由决策
-- Cloudflare KV 会话存储
-- 将后端请求转发到 `BACKEND_BASE_URL`
+```text
+app/
+  main.py                    FastAPI 路由、静态页面、会话接口
+  agent_service.py           请求组装、上下文注入、DeepSeek 调用入口
+  providers/deepseek_provider.py
+                             DeepSeek API 适配层
+  session_store.py           JSON 会话存储
+  external_context.py        AFC stats 外部接口上下文
+  skill_loader.py            按问题注入 skill 内容
+  attachment_utils.py        上传文件文本化
+public/
+  index.html
+  static/app.js
+  static/styles.css
+skill/
+  afc-stats-project-skill/   AFC stats 项目 skill
+scripts/
+  deploy.sh                  VPS Docker 部署
+  release.sh                 拉取代码、重建容器、健康检查
+  update.sh                  release.sh 包装脚本
+```
 
-FastAPI 负责：
-
-- 多模型调用
-- 附件处理
-- API 服务
-- VPS 本地运行
-
-## FastAPI 本地启动
+## 本地启动
 
 ```bash
 python -m venv .venv
@@ -37,125 +42,70 @@ copy .env.example .env
 uvicorn app.main:app --reload
 ```
 
-启动后访问：
+访问：
 
-- `GET /`
-- `GET /health`
-- `POST /v1/agent/run`
-- `GET /v1/sessions`
-- `POST /v1/sessions`
-- `POST /v1/sessions/{session_id}/chat`
+- `http://127.0.0.1:8000/`
+- `http://127.0.0.1:8000/health`
 
-## FastAPI 部署
+也可以用 Node 启动本地静态联调服务：
 
-仓库自带：
+```bash
+npm run local
+```
 
-- `Dockerfile`
-- `docker-compose.yml`
-- `scripts/deploy.sh`
-- `scripts/update.sh`
+## VPS 部署
 
-典型 VPS 路径：
+服务器目录：
+
+```bash
+/opt/cloud-agent
+```
+
+部署命令：
 
 ```bash
 cd /opt/cloud-agent
-cp .env.example .env
-chmod +x scripts/deploy.sh scripts/update.sh
 ./scripts/deploy.sh
 ```
 
-后续更新：
+更新命令：
 
 ```bash
 cd /opt/cloud-agent
 ./scripts/update.sh
 ```
 
-## Cloudflare Worker 部署
+当前生产入口：
 
-仓库已包含 Worker 发版所需文件：
+- `https://agent.552588.xyz/`
+- `https://agent.552588.xyz/health`
 
-- `wrangler.jsonc`
-- `src/worker.js`
-- `public/index.html`
-- `public/static/app.js`
-- `public/static/styles.css`
+## 环境变量
 
-直接部署：
-
-```bash
-npx wrangler deploy
+```env
+DEEPSEEK_API_KEY=your-deepseek-key
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEFAULT_DEEPSEEK_MODEL=deepseek-v4-pro
+APP_ACCESS_PASSWORD=change-me
+SESSION_STORE_PATH=data/sessions.json
 ```
 
-或者直接调用仓库脚本：
+## 主要接口
 
-```bash
-./scripts/deploy-worker.sh
-```
+- `GET /`
+- `GET /health`
+- `GET /v1/public-config`
+- `GET /v1/sessions`
+- `POST /v1/sessions`
+- `GET /v1/sessions/{session_id}`
+- `DELETE /v1/sessions/{session_id}`
+- `POST /v1/sessions/{session_id}/chat`
+- `POST /v1/agent/run`
 
-当前 Worker 依赖这些绑定：
+## 当前注意点
 
-- `SESSIONS` KV namespace
-- `ASSETS` static assets binding
-- `BACKEND_BASE_URL`
-- `CODEX_BRIDGE_TOKEN`
-- `CODEX_BRIDGE_URL`
-- `GEMINI_API_KEY`
-- `WECOM_WEBHOOK_URL`
-
-## GitHub Actions 自动发版
-
-仓库已带：
-
-- `.github/workflows/deploy-worker.yml`
-
-触发条件：
-
-- `main` 分支上涉及 `src/**`、`public/**`、`wrangler.jsonc` 的提交
-- 手动 `workflow_dispatch`
-
-要让自动发版生效，只需要在 GitHub 仓库 Secrets 里配置：
-
-- `CLOUDFLARE_API_TOKEN`
-
-这个 Token 需要至少具备：
-
-- Workers write
-- Workers KV write
-- Pages write（可选）
-- Account read
-
-## 主要环境变量
-
-FastAPI 侧：
-
-- `OPENAI_API_KEY`
-- `GEMINI_API_KEY`
-- `ZHIPU_API_KEY`
-- `APP_ACCESS_PASSWORD`
-- `DEFAULT_OPENAI_MODEL`
-- `DEFAULT_GEMINI_MODEL`
-- `DEFAULT_ZHIPU_MODEL`
-- `SESSION_STORE_PATH`
-
-Worker 侧：
-
-- `BACKEND_BASE_URL`
-- `CODEX_BRIDGE_URL`
-- `CODEX_BRIDGE_TOKEN`
-- `GEMINI_API_KEY`
-- `WECOM_WEBHOOK_URL`
-
-## 当前维护建议
-
-如果要改 Cloudflare 线上页面和会话逻辑，改这里：
-
-- `src/worker.js`
-- `public/index.html`
-- `public/static/*`
-
-VPS FastAPI 现在只保留 `/health` 和 `/v1/*`，不再提供 `/` 首页或静态前端。前端修改只应落在：
-
-- `public/index.html`
-- `public/static/*`
-- `src/worker.js`
+- 项目不再依赖 Cloudflare Worker。
+- 前端直接由 FastAPI 托管。
+- 模型入口只保留 DeepSeek。
+- 会话按 `x-wecom-userid` 隔离；没有用户 ID 时写入默认存储。
+- 上传支持图片和文本类文件，不支持视频。

@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BRANCH="${1:-codex/handover-20260326}"
+BRANCH="${1:-main}"
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:18000/health}"
 HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-45}"
 RECREATE_FLAG="${RECREATE_FLAG:---force-recreate}"
-
-if [ "$BRANCH" = "codex/render-deploy" ] && [ "${ALLOW_LEGACY_DEPLOY:-0}" != "1" ]; then
-  echo "Refusing to deploy legacy branch codex/render-deploy without ALLOW_LEGACY_DEPLOY=1" >&2
-  exit 2
-fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
